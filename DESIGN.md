@@ -74,7 +74,7 @@
 │  /api/guide, /api/excel                                    │
 │     → lib/validate.ts (입력 검사)                           │
 │     → lib/prompt.ts   (AI 지시문 만들기)                     │
-│     → lib/kobi.ts     (.env 키로 KOBI 호출 / 예시 응답 모드)  │
+│     → lib/ai.ts       (AI_PROVIDER: 예시 응답/OpenAI/KOBI)   │
 └────────────────────────────────────────────────────────────┘
                               │
                         [ KOBI API ]
@@ -89,7 +89,7 @@
   → 브라우저: 빈칸·길이 1차 검사 (바로 안내)
   → 서버 /api/guide: 같은 검사를 한 번 더 (화면을 거치지 않은 요청 대비)
   → lib/prompt.ts: PRD must ① 규칙 10개 + 입력 내용을 지시문으로 조립
-  → lib/kobi.ts: KOBI 호출 (60초 제한) — 예시 응답 모드면 samples/의 예시 결과를 돌려줌
+  → lib/ai.ts: AI_PROVIDER에 따라 예시 응답 / OpenAI / KOBI 중 하나만 호출 (60초 제한, 자동 전환 없음 — 2.4)
   → 서버: AI 답이 정해진 모양(GuideResult)인지 검사
          정의서에서 뽑은 테이블·컬럼 목록과 대조해, 없는 이름이 있으면
          이름은 그대로 두고 그 테이블의 status를 "확인 필요"로 표시 + needsCheck에 추가
@@ -162,10 +162,28 @@
 | 구성 요소 | 의존 대상 | 목적 |
 |---|---|---|
 | `app/page.tsx` | `components/*` | 화면 조립, 결과 상태 보관 |
-| `app/api/guide/route.ts` | `lib/validate.ts`, `lib/prompt.ts`, `lib/kobi.ts` | 가이드 생성 |
-| `app/api/excel/route.ts` | `lib/prompt.ts`, `lib/kobi.ts` | 기간·단위 대조 |
+| `app/api/guide/route.ts` | `lib/validate.ts`, `lib/prompt.ts`, `lib/ai.ts` | 가이드 생성 |
+| `app/api/excel/route.ts` | `lib/prompt.ts`, `lib/ai.ts` | 기간·단위 대조 |
 | `components/ExcelCheck.tsx` | `lib/excel.ts` | 브라우저에서 엑셀 읽기·계산 |
-| `lib/kobi.ts` | `.env`, `samples/mock-*.json` | KOBI 호출 또는 예시 응답 |
+| `lib/ai.ts` | `.env`(`AI_PROVIDER`), `samples/mock-*.json`, `lib/kobi.ts`, `lib/openai.ts` | 사용할 AI를 골라 호출하거나 예시 응답을 돌려줌 |
+| `lib/kobi.ts` | `.env`(`KOBI_API_URL`, `KOBI_API_KEY`) | KOBI 호출 (작업 9) |
+| `lib/openai.ts` | `.env`(`OPENAI_API_KEY`) | 테스트·검증용 OpenAI 호출 (작업 8-1) |
+
+### 2.4 AI 공급자 선택 (`AI_PROVIDER`)
+
+> PRD 7번 "테스트·검증용 보조 AI" 조건을 코드로 옮긴 규칙. 자동 전환(failover)은 하지 않는다.
+
+| `AI_PROVIDER` 값 | 동작 | 쓰는 곳 | 화면 안내 |
+|---|---|---|---|
+| `mock` (기본값 — 값이 없거나 틀려도 이것) | `samples/mock-guide.json` 예시 응답 | 공개 배포 체험판 | "예시 응답 모드" |
+| `openai` | OpenAI API 호출 | **내 PC 테스트·검증 전용** | "외부 AI(OpenAI) 테스트 모드 — 가상 데이터만" |
+| `kobi` | KOBI API 호출 | KOBI 설명서를 받은 뒤 | 없음 |
+
+- 공급자는 서버가 시작할 때 `.env` 값으로 **하나만** 정해진다. 호출이 실패해도 다른 공급자로 넘어가지 않고 6번의 오류 안내("다시 시도")를 보여준다.
+- 선택한 공급자가 아직 구현되지 않았으면 `503 AI_NOT_READY`로 "준비 중" 안내를 보여준다.
+- 응답에 `mode`(`mock`/`openai`/`kobi`)를 함께 보내, 화면이 어떤 AI의 결과인지 표시한다.
+- 지시문(`lib/prompt.ts`)과 결과 모양 검사·이름 대조·검증 필요 표시는 **공급자와 관계없이 똑같이** 적용한다.
+- Vercel 운영 환경에는 `AI_PROVIDER`를 `mock`으로 두고 `OPENAI_API_KEY`를 등록하지 않는다.
 
 ---
 
@@ -389,6 +407,9 @@ interface ExcelCheckResult {
 ## 7. 보안
 
 - [ ] KOBI 주소·키는 `.env`의 `KOBI_API_URL`, `KOBI_API_KEY`에만 두고 `lib/kobi.ts`(서버)에서만 읽는다. `NEXT_PUBLIC_`을 붙이지 않는다.
+- [ ] 테스트용 `OPENAI_API_KEY`는 `lib/openai.ts`(서버)에서만 읽고, 내 PC의 `.env`에만 둔다. Vercel 운영 환경에는 등록하지 않는다.
+- [ ] AI 공급자는 `AI_PROVIDER`로 하나만 정하고, 실패해도 다른 AI로 자동 전환하지 않는다 (2.4).
+- [ ] OpenAI 모드일 때는 화면에 "외부 AI(OpenAI) 테스트 모드 — 가상 데이터만"을 항상 표시한다.
 - [ ] 엑셀 파일은 서버로 보내지 않는다. 서버(=KOBI)에는 표 제목·머리글 글자만 보낸다.
 - [ ] 서버 로그에 입력 내용·키를 남기지 않는다.
 - [ ] 입력 길이를 서버에서도 다시 검사한다 (너무 큰 요청 차단).
@@ -446,6 +467,7 @@ interface ExcelCheckResult {
 |---|---|---|---|
 | **ExcelJS** (npm 패키지) | 엑셀 파일을 열어 칸마다 적힌 숫자와 글자를 읽어 주는 도구예요. | **필요** | 엑셀 검토 (작업 10~12) |
 | **Zod** (npm 패키지) | AI가 보낸 답이 약속한 모양(표, 목록 등)대로 왔는지 자동으로 검사해 주는 도구예요. | 권장 | 가이드 API (작업 8~9) |
+| **OpenAI API** (외부 서비스) | KOBI를 쓸 수 없는 동안, 내 PC에서 진짜 AI로 가이드를 시험해 보는 테스트용 AI예요. | 테스트 전용 | 작업 8-1 (`AI_PROVIDER=openai`) |
 | 브라우저 인쇄 기능 | 따로 설치하지 않고, 브라우저의 "인쇄 → PDF로 저장"으로 보고서를 PDF로 만들어요. | 설치 없음 | 보고서 (작업 13) |
 
 > CLAUDE.md 규칙에 따라, 위 패키지는 실제 설치 직전에 다시 확인을 받는다.
@@ -497,17 +519,18 @@ my-app/
 
 ### 11.2 구현 순서 (PLAN.md 작업 번호)
 
-1. [ ] `samples/` 시험 자료 (작업 1)
-2. [ ] `lib/types.ts` (작업 2)
-3. [ ] `app/page.tsx`, `layout.tsx`, `GuideForm` (작업 3)
-4. [ ] `lib/validate.ts` (작업 4)
-5. [ ] `app/api/guide/route.ts` + `lib/kobi.ts` 예시 응답 모드 (작업 5)
-6. [ ] 결과 화면 조각 4개 (작업 6~7)
+1. [x] `samples/` 시험 자료 (작업 1)
+2. [x] `lib/types.ts` (작업 2)
+3. [x] `app/page.tsx`, `layout.tsx`, `GuideForm` (작업 3)
+4. [x] `lib/validate.ts` (작업 4)
+5. [x] `app/api/guide/route.ts` + `lib/ai.ts` 예시 응답 모드 (작업 5)
+6. [x] 결과 화면 조각 4개 (작업 6~7)
 7. [ ] `lib/prompt.ts` (작업 8)
-8. [ ] `lib/kobi.ts` 실제 호출 (작업 9, KOBI 설명서 받은 뒤)
-9. [ ] `lib/excel.ts`, `ExcelCheck`, `app/api/excel/route.ts` (작업 10~12)
-10. [ ] `ReportView` + 인쇄 스타일 (작업 13)
-11. [ ] 성공 기준 측정 (작업 14), 배포 준비 (작업 15)
+8. [ ] `lib/openai.ts` 테스트 호출 (작업 8-1, 내 PC 전용)
+9. [ ] `lib/kobi.ts` 실제 호출 (작업 9, KOBI 설명서 받은 뒤)
+10. [ ] `lib/excel.ts`, `ExcelCheck`, `app/api/excel/route.ts` (작업 10~12)
+11. [ ] `ReportView` + 인쇄 스타일 (작업 13)
+12. [ ] 성공 기준 측정 (작업 14), 배포 준비 (작업 15)
 
 ### 11.3 작업 묶음 안내
 
@@ -538,3 +561,4 @@ my-app/
 |---|---|---|---|
 | 0.1 | 2026-11-02 | 초안 작성 (설계안 C 선택) | 클로드 (디지털혁신팀) |
 | 0.2 | 2026-11-02 | 문서 검토 '높음' 4건 반영: 요구사항문 요약(summary), 엑셀 대조 셀 주소(labels), 합계·소계 점검 규칙, 테이블 정의서 형식·이름 대조 | 클로드 (디지털혁신팀) |
+| 0.3 | 2026-11-02 | AI 공급자 선택(`AI_PROVIDER`: mock/openai/kobi) 추가 — OpenAI는 테스트 전용, 자동 전환 없음 | 클로드 (디지털혁신팀) |

@@ -80,6 +80,14 @@ export default function GuideApp() {
             </p>
           )}
 
+          {/* OpenAI 테스트 모드 안내는 항상 표시 (PRD 7번, Design Ref: §2.4) */}
+          {mode === "openai" && (
+            <p className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-3 text-sm text-violet-900 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-200">
+              <strong>외부 AI(OpenAI) 테스트 모드 — 가상 데이터만</strong> — 입력한 요구사항문과 정의서가 OpenAI로
+              전송되었습니다. 실제 업무 자료는 넣지 마세요.
+            </p>
+          )}
+
           {/* 요구사항문 요약 (AI 작성, 3줄 이내) */}
           <div className="flex flex-col gap-2">
             <h3 className="text-lg font-semibold text-black dark:text-zinc-50">요구사항 요약</h3>

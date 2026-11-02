@@ -14,7 +14,7 @@
 ## 2. 기술 스택 (고정)
 
 - **Next.js 16.4.3** (App Router, `src` 폴더 없음) + React 19.3 + TypeScript (strict) + Tailwind CSS 4 + ESLint 9
-- **AI**: 공사 제공 KOBI API (서버 쪽 코드에서만 호출)
+- **AI**: 공사 제공 KOBI API (서버 쪽 코드에서만 호출). KOBI를 쓸 수 없는 동안에는 테스트·검증용으로 OpenAI API를 쓸 수 있다 — `AI_PROVIDER`로 직접 선택, 내 PC 전용, 자동 전환(failover) 금지 (PRD 7번, DESIGN 2.4)
 - 배포: **Vercel**을 사용한다 (Part 5).
 - 기술 스택은 PRD에 정한 대로 Next.js로 고정한다. 다른 프레임워크로 바꾸거나 마이그레이션을 제안하지 않는다.
 - PRD에 없는 다른 프레임워크·DB·AI 서비스는 제안하지 않는다.
@@ -63,7 +63,7 @@ DB 접속·쿼리 실행 / 결재 기능 / 엑셀 자동 수정 / 로그인·권
 
 ## 7. 보안 규칙 (PRD 7번)
 
-- KOBI API 주소와 키는 `.env`에만 둔다. 코드에는 `process.env`로만 읽는다.
+- KOBI API 주소와 키, 테스트용 `OPENAI_API_KEY`는 `.env`에만 둔다. 코드에는 `process.env`로만 읽는다. Vercel 운영 환경에는 `AI_PROVIDER=mock`으로 두고 OpenAI 키를 등록하지 않는다.
 - 키를 쓰는 코드는 **서버 쪽(`app/api`)에만** 둔다. 브라우저 코드(`"use client"`)나 `NEXT_PUBLIC_` 변수에는 절대 넣지 않는다.
 - `.env` 등 비밀 정보 파일과 `node_modules` 폴더는 `.gitignore`에 등록해 두고, **절대 커밋하지 않는다** (현재 둘 다 등록됨).
 - `.env` 내용을 화면·로그·채팅에 출력하지 않는다.

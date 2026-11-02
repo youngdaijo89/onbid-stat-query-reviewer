@@ -1,7 +1,7 @@
 // Design Ref: §4.2 — POST /api/guide: 쿼리 작성 가이드 생성 (PLAN 작업 5)
 import { checkNamesAgainstDef } from "@/lib/tableDef";
 import { isGuideResult, withVerifyHeader } from "@/lib/guideResult";
-import { getGuideMode, KobiNotReadyError, requestGuide } from "@/lib/kobi";
+import { AiNotReadyError, getAiProvider, requestGuide } from "@/lib/ai";
 import { validateGuideInput } from "@/lib/validate";
 import type { ApiError, ApiErrorCode, GuideResponse } from "@/lib/types";
 
@@ -31,10 +31,11 @@ export async function POST(request: Request) {
   try {
     raw = await requestGuide(input.value);
   } catch (err) {
-    if (err instanceof KobiNotReadyError) {
-      return fail(503, "KOBI_NOT_READY", "실제 AI 연결은 아직 준비 중이에요. 예시 응답 모드로 사용해 주세요.");
+    // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4)
+    if (err instanceof AiNotReadyError) {
+      return fail(503, "AI_NOT_READY", "선택한 AI 연결은 아직 준비 중이에요. 예시 응답 모드로 사용해 주세요.");
     }
-    console.error("guide: KOBI 호출 실패", err instanceof Error ? err.name : "unknown");
+    console.error("guide: AI 호출 실패", err instanceof Error ? err.name : "unknown");
     return fail(502, "KOBI_ERROR", "가이드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
@@ -47,5 +48,5 @@ export async function POST(request: Request) {
   const checked = checkNamesAgainstDef(raw, input.value.tableDef);
   const data = { ...checked, exampleQuery: withVerifyHeader(checked.exampleQuery) };
 
-  return Response.json({ data, mode: getGuideMode() } satisfies GuideResponse);
+  return Response.json({ data, mode: getAiProvider() } satisfies GuideResponse);
 }

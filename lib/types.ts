@@ -35,8 +35,8 @@ export interface GuideResult {
   needsCheck: string[]; // "확인 필요" 항목 모음
 }
 
-// 가이드 응답 모드: mock = 미리 만든 예시 응답, kobi = 실제 AI 호출
-export type GuideMode = "mock" | "kobi";
+// 가이드를 만든 AI (Design Ref: §2.4): mock = 예시 응답, openai = 테스트용 OpenAI, kobi = 공사 KOBI
+export type GuideMode = "mock" | "openai" | "kobi";
 
 export interface GuideResponse {
   data: GuideResult;
@@ -49,7 +49,7 @@ export type ApiErrorCode =
   | "UNSUPPORTED_MEDIA_TYPE"
   | "KOBI_ERROR"
   | "KOBI_TIMEOUT"
-  | "KOBI_NOT_READY";
+  | "AI_NOT_READY";
 
 export interface ApiError {
   error: { code: ApiErrorCode; message: string };
