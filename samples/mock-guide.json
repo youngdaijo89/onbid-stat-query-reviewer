@@ -1,0 +1,35 @@
+{
+  "_comment": "KOBI 없이 개발할 때 /api/guide가 돌려줄 예시 응답 (req-01.txt + table-definition.txt 기준, 가상 데이터)",
+  "conditions": [
+    { "item": "기간", "value": "2025-01-01 ~ 2025-12-31", "source": "2025년 1월 1일부터 2025년 12월 31일까지" },
+    { "item": "기준일", "value": "개찰일 (VT_BID_RESULT.OPEN_DT)", "source": "집계 기준일은 개찰일로 합니다." },
+    { "item": "대상", "value": "낙찰 건 (RESULT_CD = '1')", "source": "온비드에서 낙찰된 건의" },
+    { "item": "제외 조건", "value": "취소 공고 제외 (NOTICE_STAT_CD <> '20')", "source": "공고가 취소된 건은 제외합니다." },
+    { "item": "집계 단위", "value": "월별", "source": "월별 낙찰 건수와 낙찰 금액 합계를" },
+    { "item": "표시 형식", "value": "낙찰 금액 억원 단위, 소수점 첫째 자리", "source": "낙찰 금액은 억원 단위로, 소수점 첫째 자리까지 작성합니다." },
+    { "item": "정렬", "value": "1월 ~ 12월 순서", "source": "1월부터 12월까지 월 순서로 정렬합니다." }
+  ],
+  "tables": [
+    {
+      "table": "VT_BID_RESULT",
+      "columns": ["RESULT_CD", "OPEN_DT", "WIN_AMT", "NOTICE_ID"],
+      "joinNote": "기준 테이블. 낙찰 여부·개찰일·낙찰 금액을 가져온다.",
+      "status": "확인됨"
+    },
+    {
+      "table": "VT_NOTICE",
+      "columns": ["NOTICE_ID", "NOTICE_STAT_CD"],
+      "joinNote": "VT_BID_RESULT.NOTICE_ID = VT_NOTICE.NOTICE_ID 로 연결해 취소 공고를 걸러낸다.",
+      "status": "확인됨"
+    }
+  ],
+  "cautions": [
+    { "text": "12월 31일을 <= DATE '2025-12-31'로 쓰면 시간 정보가 있는 자료가 빠질 수 있다. < DATE '2026-01-01'을 쓴다.", "level": "높음" },
+    { "text": "취소 공고는 VT_NOTICE의 상태 코드로만 알 수 있다. VT_NOTICE를 연결하지 않으면 취소 건이 섞인다.", "level": "높음" },
+    { "text": "낙찰 금액은 원 단위로 저장돼 있다. 억원으로 바꾸려면 100,000,000으로 나눈다.", "level": "중간" },
+    { "text": "낙찰이 0건인 달은 결과에 나오지 않는다. 12개월을 모두 보여야 하는지 확인한다.", "level": "낮음" }
+  ],
+  "skeleton": "SELECT TO_CHAR(r.OPEN_DT, 'YYYY-MM') AS 월,\n       COUNT(*) AS 낙찰_건수,\n       ROUND(SUM(r.WIN_AMT) / ____, 1) AS 낙찰_금액_억원\n  FROM VT_BID_RESULT r\n  JOIN VT_NOTICE n ON ____\n WHERE r.RESULT_CD = ____\n   AND r.OPEN_DT >= ____\n   AND r.OPEN_DT <  ____\n   AND n.NOTICE_STAT_CD ____\n GROUP BY ____\n ORDER BY ____;",
+  "exampleQuery": "-- 예시 — 실행 전 작성자 검증 필요\nSELECT TO_CHAR(r.OPEN_DT, 'YYYY-MM') AS 월,\n       COUNT(*) AS 낙찰_건수,\n       ROUND(SUM(r.WIN_AMT) / 100000000, 1) AS 낙찰_금액_억원 -- \"억원 단위로, 소수점 첫째 자리까지\"\n  FROM VT_BID_RESULT r\n  JOIN VT_NOTICE n ON n.NOTICE_ID = r.NOTICE_ID\n WHERE r.RESULT_CD = '1'                       -- \"낙찰된 건의\"\n   AND r.OPEN_DT >= DATE '2025-01-01'          -- \"2025년 1월 1일부터\" / \"개찰일로 합니다\"\n   AND r.OPEN_DT <  DATE '2026-01-01'          -- \"2025년 12월 31일까지\"\n   AND n.NOTICE_STAT_CD <> '20'                -- \"공고가 취소된 건은 제외합니다\"\n GROUP BY TO_CHAR(r.OPEN_DT, 'YYYY-MM')        -- \"월별\"\n ORDER BY 월;                                  -- \"월 순서로 정렬합니다\"",
+  "needsCheck": []
+}

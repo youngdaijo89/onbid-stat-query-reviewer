@@ -1,0 +1,34 @@
+[가상 테이블 정의서] — 실습용으로 지어낸 테이블입니다. 실제 온비드 DB와 관계없습니다.
+
+■ VT_ITEM (물건)
+- ITEM_ID        VARCHAR2(20)  물건 ID (PK)
+- ITEM_NM        VARCHAR2(200) 물건명
+- ITEM_TYPE_CD   CHAR(2)       물건 유형 코드 (01: 부동산, 02: 자동차, 03: 기타)
+- REG_ORG_CD     VARCHAR2(10)  등록 기관 코드 (FK → VT_ORG.ORG_CD)
+- REG_DT         DATE          물건 등록일
+
+■ VT_NOTICE (입찰 공고)
+- NOTICE_ID      VARCHAR2(20)  공고 ID (PK)
+- ITEM_ID        VARCHAR2(20)  물건 ID (FK → VT_ITEM.ITEM_ID)
+                               ※ 한 물건에 공고가 여러 번 날 수 있음 (유찰 후 재공고)
+- NOTICE_DT      DATE          공고일
+- BID_START_DT   DATE          입찰 시작일
+- BID_END_DT     DATE          입찰 마감일
+- NOTICE_STAT_CD CHAR(2)       공고 상태 코드 — 조회 시점의 현재 상태 (10: 진행, 20: 취소, 30: 종료)
+- CANCEL_DT      DATE          공고 취소일 (취소되지 않았으면 NULL)
+
+■ VT_BID_RESULT (입찰 결과)
+- RESULT_ID      VARCHAR2(20)  결과 ID (PK)
+- NOTICE_ID      VARCHAR2(20)  공고 ID (FK → VT_NOTICE.NOTICE_ID)
+- RESULT_CD      CHAR(1)       결과 코드 (1: 낙찰, 2: 유찰, 3: 입찰 취소)
+- OPEN_DT        DATE          개찰일
+- WIN_AMT        NUMBER(15)    낙찰 금액 (원 단위, 낙찰이 아니면 NULL)
+- BIDDER_CNT     NUMBER(5)     입찰자 수
+
+■ VT_ORG (기관)
+- ORG_CD         VARCHAR2(10)  기관 코드 (PK)
+- ORG_NM         VARCHAR2(100) 기관명
+- ORG_TYPE_CD    CHAR(1)       기관 유형 코드 (G: 공공, P: 민간)
+
+■ 테이블 관계
+VT_ORG 1 ── N VT_ITEM 1 ── N VT_NOTICE 1 ── N VT_BID_RESULT
