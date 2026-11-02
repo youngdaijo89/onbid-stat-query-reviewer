@@ -20,9 +20,9 @@ const STEPS = [
 export default function Home() {
   return (
     <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex w-full max-w-3xl flex-col gap-10 bg-white px-6 py-16 sm:px-16 dark:bg-black">
+      <main className="flex w-full max-w-3xl flex-col gap-10 bg-white px-6 py-16 sm:px-16 dark:bg-black print:max-w-none print:p-0">
         {/* 앱 이름과 한 줄 설명 */}
-        <header className="flex flex-col gap-3">
+        <header className="flex flex-col gap-3 print:hidden">
           <h1 className="text-4xl font-bold tracking-tight text-black sm:text-5xl dark:text-zinc-50">
             온비드 쿼리 리뷰어
           </h1>
@@ -35,7 +35,7 @@ export default function Home() {
         {/* 가상 데이터 경고 (PRD 7번, DESIGN §7 "항상 표시") */}
         <div
           role="alert"
-          className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-4 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-4 print:hidden text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
         >
           <p className="font-semibold">⚠ 가상 데이터만 입력하세요</p>
           <p className="mt-1 text-sm leading-6">
@@ -45,7 +45,7 @@ export default function Home() {
         </div>
 
         {/* 사용 순서 */}
-        <section className="flex flex-col gap-4">
+        <section className="flex flex-col gap-4 print:hidden">
           <h2 className="text-xl font-semibold text-black dark:text-zinc-50">이렇게 사용해요</h2>
           <ol className="flex flex-col gap-3">
             {STEPS.map((step, i) => (

@@ -73,6 +73,12 @@ export interface ExcelLabel {
   text: string;
 }
 
+// /api/excel 응답 (기간·단위 대조 결과)
+export interface ExcelLabelResponse {
+  data: { issues: ExcelIssue[] };
+  mode: GuideMode;
+}
+
 export interface ExcelCheckResult {
   fileName: string;
   sheetName: string;

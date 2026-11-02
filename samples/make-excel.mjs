@@ -6,7 +6,10 @@ import { crc32 } from "node:zlib";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "excel");
+const SAMPLES_DIR = dirname(fileURLToPath(import.meta.url));
+const OUT_DIR = join(SAMPLES_DIR, "excel");
+// 화면의 [예시 엑셀로 점검]·내려받기 링크가 쓰는 복사본 (public 폴더는 그대로 웹에 공개됨, 가상 데이터만)
+const PUBLIC_DIR = join(SAMPLES_DIR, "..", "public", "samples");
 
 // ---------- 시험 자료 정의 ----------
 // rows: 1행부터 차례대로. 숫자는 숫자 칸, 글자는 글자 칸이 된다. null은 빈칸.
@@ -245,8 +248,11 @@ function zip(files) {
 // ---------- 실행 ----------
 
 mkdirSync(OUT_DIR, { recursive: true });
+mkdirSync(PUBLIC_DIR, { recursive: true });
 for (const sample of [excel01(), excel02(), excel03(), excel04(), excel05()]) {
-  writeFileSync(join(OUT_DIR, sample.file), zip(xlsxParts(sample.rows)));
+  const xlsx = zip(xlsxParts(sample.rows));
+  writeFileSync(join(OUT_DIR, sample.file), xlsx);
+  writeFileSync(join(PUBLIC_DIR, sample.file), xlsx);
   console.log(`\n${sample.file} (${sample.requirement})`);
   for (const e of sample.errors) {
     const detail = e.note ?? `기대값 ${e.expected}, 실제값 ${e.actual}`;

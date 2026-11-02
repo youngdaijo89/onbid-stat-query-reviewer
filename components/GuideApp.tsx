@@ -1,14 +1,16 @@
 "use client";
-// Design Ref: §5.1 — 입력(①)과 가이드 결과(②)를 묶고 화면 상태를 보관한다 (PLAN 작업 3~7)
+// Design Ref: §5.1 — 입력(①)·가이드 결과(②)·엑셀 점검(③)·보고서를 묶고 화면 상태를 보관한다 (PLAN 작업 3~13)
 import { useState } from "react";
 import CautionList from "@/components/CautionList";
 import ConditionTable from "@/components/ConditionTable";
+import ExcelCheck from "@/components/ExcelCheck";
 import GuideForm from "@/components/GuideForm";
 import QueryBlock from "@/components/QueryBlock";
+import ReportView from "@/components/ReportView";
 import StatusMessage from "@/components/StatusMessage";
 import TableGuide from "@/components/TableGuide";
 import exampleInput from "@/samples/example-input.json";
-import type { ApiError, GuideMode, GuideResponse, GuideResult } from "@/lib/types";
+import type { ApiError, ExcelCheckResult, GuideMode, GuideResponse, GuideResult } from "@/lib/types";
 
 const TIMEOUT_MS = 60_000; // PLAN SC-4: 1분 이내
 const GENERIC_ERROR = "가이드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.";
@@ -20,6 +22,7 @@ export default function GuideApp() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GuideResult | null>(null);
   const [mode, setMode] = useState<GuideMode>("mock");
+  const [excel, setExcel] = useState<ExcelCheckResult | null>(null);
 
   async function generate() {
     setLoading(true);
@@ -53,7 +56,9 @@ export default function GuideApp() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <>
+    {/* 화면용 영역 — 인쇄할 때는 숨기고 아래 ReportView만 보인다 */}
+    <div className="flex flex-col gap-10 print:hidden">
       <GuideForm
         requirement={requirement}
         tableDef={tableDef}
@@ -115,6 +120,25 @@ export default function GuideApp() {
           <QueryBlock title="완성 쿼리 예시" query={result.exampleQuery} showVerifyBadge />
         </section>
       )}
+
+      {/* 가이드가 나온 뒤에만 엑셀 점검과 보고서를 보여준다 (Design Ref: §5.1) */}
+      {result && <ExcelCheck requirement={requirement} onResult={setExcel} />}
+
+      {result && (
+        <div className="flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md bg-black px-5 py-2.5 text-sm font-semibold text-white dark:bg-zinc-50 dark:text-black"
+          >
+            보고서 출력
+          </button>
+          <p className="text-xs text-zinc-500">인쇄 창에서 “PDF로 저장”을 고르면 결재 첨부용 PDF가 만들어져요.</p>
+        </div>
+      )}
     </div>
+
+    {result && <ReportView result={result} mode={mode} excel={excel} />}
+    </>
   );
 }
