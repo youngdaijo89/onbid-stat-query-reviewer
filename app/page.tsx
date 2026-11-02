@@ -1,5 +1,5 @@
-// Design Ref: §5.1 — 첫 화면 위쪽(제목·설명·가상 데이터 경고)을 먼저 만든다.
-// 입력칸과 결과 영역은 PLAN 작업 3 이후에 이 아래에 붙인다.
+// Design Ref: §5.1 — 첫 화면: 제목·설명·가상 데이터 경고·사용 순서, 그 아래 입력과 가이드 결과
+import GuideApp from "@/components/GuideApp";
 
 // 사용 순서 안내 (PRD 4번 이용 흐름 요약)
 const STEPS = [
@@ -67,8 +67,8 @@ export default function Home() {
           </ol>
         </section>
 
-        {/* 아직 만들지 않은 입력 화면 안내 */}
-        <p className="text-sm text-zinc-500">입력 화면은 준비 중입니다.</p>
+        {/* ① 입력 + ② 가이드 결과 */}
+        <GuideApp />
       </main>
     </div>
   );
