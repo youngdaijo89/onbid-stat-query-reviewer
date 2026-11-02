@@ -1,5 +1,6 @@
 {
   "_comment": "KOBI 없이 개발할 때 /api/guide가 돌려줄 예시 응답 (req-01.txt + table-definition.txt 기준, 가상 데이터)",
+  "summary": "2025년 1~12월 낙찰 건의 월별 건수와 낙찰 금액 합계(억원, 소수점 첫째 자리)를 집계한다.\n개찰일 기준이며 취소된 공고는 제외한다.\n결과는 월 순서로 정렬한다.",
   "conditions": [
     { "item": "기간", "value": "2025-01-01 ~ 2025-12-31", "source": "2025년 1월 1일부터 2025년 12월 31일까지" },
     { "item": "기준일", "value": "개찰일 (VT_BID_RESULT.OPEN_DT)", "source": "집계 기준일은 개찰일로 합니다." },
