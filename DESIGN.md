@@ -177,8 +177,9 @@
 | `app/api/excel/route.ts` | `lib/prompt.ts`, `lib/ai.ts` | 기간·단위 대조 |
 | `components/ExcelCheck.tsx` | `lib/excel.ts` | 브라우저에서 엑셀 읽기·계산 |
 | `lib/ai.ts` | `.env`(`AI_PROVIDER`), `samples/mock-*.json`, `lib/kobi.ts`, `lib/openai.ts` | 사용할 AI를 골라 호출하거나 예시 응답을 돌려줌 |
-| `lib/kobi.ts` | `.env`(`KOBI_API_URL`, `KOBI_API_KEY`) | KOBI 호출 (작업 9) |
-| `lib/openai.ts` | `.env`(`OPENAI_API_KEY`) | 테스트·검증용 OpenAI 호출 (작업 8-1) |
+| `lib/kobi.ts` | `.env`(`KOBI_API_URL`, `KOBI_API_KEY`, `KOBI_MODEL` 등 — INTRANET.md 2번), `lib/chatClient.ts` | KOBI 호출 (작업 9) |
+| `lib/openai.ts` | `.env`(`OPENAI_API_KEY`), `lib/chatClient.ts` | 테스트·검증용 OpenAI 호출 (작업 8-1) |
+| `lib/chatClient.ts` | — | OpenAI 방식 요청 공통 부분: 시간 제한, JSON 모드 켜고 끄기, system 지시문 합치기, ```json 답 읽기, 오류 분류 |
 
 ### 2.4 AI 공급자 선택 (`AI_PROVIDER`)
 
@@ -587,3 +588,4 @@ my-app/
 | 0.3 | 2026-11-02 | AI 공급자 선택(`AI_PROVIDER`: mock/openai/kobi) 추가 — OpenAI는 테스트 전용, 자동 전환 없음 | 클로드 (디지털혁신팀) |
 | 0.4 | 2026-11-02 | 엑셀 읽기를 ExcelJS 대신 직접 읽기(`lib/xlsx.ts`)로 변경, 작업 10~13 완료 표시 | 클로드 (디지털혁신팀) |
 | 0.5 | 2026-11-03 | AI 답 재검사 규칙(SQL 안전·Oracle 문법·OFF_TASK·길이 상한) 추가 | 클로드 (디지털혁신팀) |
+| 0.6 | 2026-11-03 | `lib/chatClient.ts` 추가(OpenAI·KOBI 공통), KOBI 조정 환경변수 — 내부망 반입 준비 | 클로드 (디지털혁신팀) |

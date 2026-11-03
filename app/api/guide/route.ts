@@ -2,7 +2,7 @@
 import { checkNamesAgainstDef } from "@/lib/tableDef";
 import { isGuideResult, notOracleHints, unsafeSqlReason, withinLimits, withVerifyHeader } from "@/lib/guideResult";
 import { getAiProvider, requestGuide } from "@/lib/ai";
-import { aiFailure } from "@/lib/aiErrors";
+import { aiErrorLabel, aiFailure } from "@/lib/aiErrors";
 import { validateGuideInput } from "@/lib/validate";
 import type { ApiError, ApiErrorCode, GuideResponse } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     raw = await requestGuide(input.value);
   } catch (err) {
     // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4)
-    console.error("guide: AI 호출 실패", err instanceof Error ? err.constructor.name : "unknown");
+    console.error("guide: AI 호출 실패", aiErrorLabel(err));
     const f = aiFailure(err, "가이드를 만들지");
     return fail(f.status, f.code, f.message);
   }

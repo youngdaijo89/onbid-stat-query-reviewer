@@ -45,3 +45,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 내부망 반입 묶음 (npm run pack:intranet 결과물)
+/intranet-package/

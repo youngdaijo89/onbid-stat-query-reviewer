@@ -34,7 +34,7 @@
 | # | 항목 | 분류 | 어디에 | 고치는 법 |
 |---|---|---|---|---|
 | 1 | `.env`에 이 앱과 무관한 고권한 토큰 4개(GITHUB, SUPABASE, VERCEL, OPENAI)가 있어 Vercel CLI 배포 때 함께 올라갈 수 있음 | 보안 #4 (높음) | 코드·운영 | 맨 위 폴더에 `.vercelignore` 파일을 만들고 `.env*` 한 줄을 넣는다. 장기적으로 개인 토큰은 프로젝트 밖으로 옮긴다 |
-| 2 | 보안 헤더가 하나도 없음 | 보안 #10 (중간) | 코드 | `next.config.ts`에 `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, 최소 CSP를 추가하고 `poweredByHeader: false`로 둔다 |
+| 2 | ✅ (2026-11-03 반영) 보안 헤더가 하나도 없음 | 보안 #10 (중간) | 코드 | `next.config.ts`에 `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, 최소 CSP를 추가하고 `poweredByHeader: false`로 둔다 |
 | 3 | 시험용 정의서의 `■ 테이블 관계` 줄이 규칙상 가짜 테이블 "테이블"로 읽힘 | 갭 #17 (낮음) | 코드(samples) | [table-definition.txt:33](samples/table-definition.txt:33)의 `■`를 다른 기호로 바꾼다 |
 
 ### P1 — 다음 기능을 만들기 전에 문서에 먼저 반영

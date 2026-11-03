@@ -57,3 +57,7 @@ npm run dev
 | `AI_PROVIDER` | `mock`(기본) / `openai` / `kobi`. 값이 없거나 틀려도 `mock`으로 동작 |
 
 비밀 값은 `.env`에만 두며 저장소에 올리지 않습니다.
+
+## 내부망 반입
+
+부서 내부망 서버로 옮겨 KOBI로 쓰는 방법은 [INTRANET.md](INTRANET.md)를 본다.

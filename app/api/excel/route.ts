@@ -1,7 +1,7 @@
 // Design Ref: §4.3 — POST /api/excel: 엑셀 제목·단위·머리글의 기간·단위를 요구사항문과 대조 (PLAN 작업 12)
 // 엑셀 파일 자체는 받지 않는다. 브라우저가 골라낸 글자 칸(셀 주소 + 종류 + 글자)만 받는다.
 import { getAiProvider, requestExcelLabelCheck } from "@/lib/ai";
-import { aiFailure } from "@/lib/aiErrors";
+import { aiErrorLabel, aiFailure } from "@/lib/aiErrors";
 import { validateExcelLabelInput } from "@/lib/validate";
 import { parseCellRef } from "@/lib/xlsx";
 import type { ApiError, ApiErrorCode, ExcelIssue, ExcelLabelResponse } from "@/lib/types";
@@ -31,8 +31,8 @@ export async function POST(request: Request) {
     raw = await requestExcelLabelCheck(input.value.requirement, input.value.labels);
   } catch (err) {
     // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4). 합계·소계 점검 결과는 화면에 그대로 남는다.
-    console.error("excel: AI 호출 실패", err instanceof Error ? err.constructor.name : "unknown");
-    const f = aiFailure(err, "기간·단위 대조를");
+    console.error("excel: AI 호출 실패", aiErrorLabel(err));
+    const f = aiFailure(err, "기간·단위 대조를 하지");
     return fail(f.status, f.code, f.message);
   }
 

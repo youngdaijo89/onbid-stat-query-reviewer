@@ -55,6 +55,8 @@
       - 방어 시험: 지시 무시 요구 → `OFF_TASK`로 거절, 삭제(DELETE) 요구 → SELECT만 작성, Oracle에 없는 문법(WITH ROLLUP 등)은 "확인 필요"로 표시됨.
 9. KOBI 연결 — `.env`의 주소·키로 서버에서만 호출, 실패 시 "다시 시도" 안내하고 입력은 유지 (KOBI 설명서 받은 뒤)
 
+   9-0. ✅ 내부망 반입 준비 (2026-11-03) — OpenAI 방식 KOBI 호출 코드(Gemma 대비: JSON 모드 끔, system 지시문 합침, ```json 답 읽기), 글꼴 프로젝트 안에 넣기, standalone 묶음(`npm run pack:intranet`), 보안 머리글. 가짜 KOBI로만 시험, 실제 KOBI 시험은 남음 → [INTRANET.md](INTRANET.md)
+
 **must ② 결과 엑셀 검토**
 
 10. ✅ 엑셀 업로드와 형식 검사 — .xlsx, 10MB 이하, 시트 1개, 1만 행 이하
@@ -245,6 +247,7 @@ PRD 1·2번 참고. 요구사항 해석이 사람마다 다르고, 엑셀 단계
 |---|---|---|:---:|
 | `KOBI_API_URL` | KOBI API 주소 | 서버 전용 | ☐ (설명서 받은 뒤) |
 | `KOBI_API_KEY` | KOBI API 키 | 서버 전용 | ☐ (설명서 받은 뒤) |
+| `KOBI_MODEL`, `KOBI_AUTH_HEADER`, `KOBI_JSON_MODE`, `KOBI_MERGE_SYSTEM`, `KOBI_TIMEOUT_MS` | KOBI 요청 방식 조정 (기본값은 INTRANET.md 2번) | 서버 전용 | ☐ (설명서 받은 뒤) |
 | `AI_PROVIDER` | 사용할 AI 선택 (`mock`/`openai`/`kobi`, 없거나 틀리면 `mock`) | 서버 전용 | ☐ |
 | `OPENAI_API_KEY` | 테스트용 OpenAI 키 (내 PC 전용, Vercel 운영 환경에는 등록 안 함) | 서버 전용 | ☑ (이미 있음) |
 
@@ -271,3 +274,4 @@ PRD 1·2번 참고. 요구사항 해석이 사람마다 다르고, 엑셀 단계
 | 0.3 | 2026-11-02 | 작업 8-1(OpenAI 테스트 모드) 추가, `AI_PROVIDER` 환경변수와 관련 위험 추가 | 클로드 (디지털혁신팀) |
 | 0.4 | 2026-11-02 | 작업 10~13 완료 표시, FR-07~10 상태 갱신 | 클로드 (디지털혁신팀) |
 | 0.5 | 2026-11-03 | 작업 8·8-1 완료 표시, OpenAI 실측 결과 기록 | 클로드 (디지털혁신팀) |
+| 0.6 | 2026-11-03 | 작업 9-0(내부망 반입 준비) 추가, KOBI 조정 환경변수 추가 | 클로드 (디지털혁신팀) |

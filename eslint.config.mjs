@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 내부망 반입 묶음 (빌드 결과물을 모은 폴더)
+    "intranet-package/**",
   ]),
 ]);
 

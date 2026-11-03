@@ -16,6 +16,20 @@ export class AiUpstreamError extends Error {}
 // 가이드 작성과 관계없는 요청이라 AI가 거절했을 때
 export class AiOffTaskError extends Error {}
 
+// 서버 로그용 이름 — 빌드하면 클래스 이름이 짧게 바뀌므로 직접 붙인다.
+// 우리가 만든 오류의 글(예: "KOBI 401")만 남기고, 그 밖의 오류 내용은 키·주소가 섞일 수 있어 남기지 않는다.
+export function aiErrorLabel(err: unknown): string {
+  const kinds: [new (...a: never[]) => Error, string][] = [
+    [AiNotReadyError, "AiNotReady"],
+    [AiConfigError, "AiConfig"],
+    [AiTimeoutError, "AiTimeout"],
+    [AiUpstreamError, "AiUpstream"],
+    [AiOffTaskError, "AiOffTask"],
+  ];
+  const hit = kinds.find(([cls]) => err instanceof cls);
+  return hit ? `${hit[1]}: ${(err as Error).message}` : "unknown";
+}
+
 // 오류 → 화면에 보일 정해진 문장 (내부 내용·키·주소는 내보내지 않는다). /api/guide·/api/excel이 함께 쓴다.
 export function aiFailure(err: unknown, what: string) {
   if (err instanceof AiNotReadyError)
@@ -26,5 +40,5 @@ export function aiFailure(err: unknown, what: string) {
     return { status: 504, code: "KOBI_TIMEOUT", message: "응답이 늦어지고 있어요. 다시 시도해 주세요." } as const;
   if (err instanceof AiOffTaskError)
     return { status: 422, code: "OFF_TASK", message: "통계 쿼리 작성과 관계없는 내용이라 처리하지 않았어요. 요구사항문을 확인해 주세요." } as const;
-  return { status: 502, code: "KOBI_ERROR", message: `${what}하지 못했어요. 잠시 후 다시 시도해 주세요.` } as const;
+  return { status: 502, code: "KOBI_ERROR", message: `${what} 못했어요. 잠시 후 다시 시도해 주세요.` } as const;
 }
