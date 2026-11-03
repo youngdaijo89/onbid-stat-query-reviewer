@@ -2,6 +2,7 @@
 // Design Ref: §2.2 "테이블 정의서 입력 형식" — 정의서 엑셀 업로드·템플릿 내려받기·예시 엑셀 채우기
 // 엑셀은 브라우저 안에서만 읽고, 읽은 내용을 글로 바꿔 입력칸에 채운다 (서버로 파일을 보내지 않음).
 import { useRef, useState } from "react";
+import DictionarySqlHelp from "@/components/DictionarySqlHelp";
 import { DefinitionReadError, definitionFromSheet } from "@/lib/tableDefExcel";
 import { readFirstSheet, XlsxReadError } from "@/lib/xlsx";
 
@@ -89,6 +90,7 @@ export default function TableDefUpload({ disabled, onLoaded }: Props) {
           {message.text}
         </p>
       )}
+      <DictionarySqlHelp />
     </div>
   );
 }
