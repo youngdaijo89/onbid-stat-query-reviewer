@@ -25,6 +25,109 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* 첫 화면 머리 영역 — 딥 네이비 우주 분위기 (밝기·다크 모드와 관계없이 항상 어두운 바탕) */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  padding: 3.5rem 1.5rem 3.75rem;
+  text-align: center;
+  color: #ffffff;
+  background:
+    radial-gradient(ellipse 60% 45% at 50% -10%, rgba(80, 130, 255, 0.28), transparent 70%),
+    #02040d;
+}
+/* 아래쪽에 빛나는 행성 지평선 느낌 */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -70% -20%;
+  height: 90%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 166, 77, 0.55), rgba(255, 120, 40, 0.18) 35%, transparent 65%);
+  pointer-events: none;
+}
+.hero > * {
+  position: relative;
+  z-index: 1;
+}
+.hero-eyebrow {
+  font-family: var(--font-urbanist), sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.46em;
+  color: #cdd2e6;
+}
+.hero-title {
+  margin-top: 0.9rem;
+  font-size: clamp(2rem, 5.5vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  /* 좁은 화면에서 낱말이 끊기거나 한 낱말만 혼자 줄바꿈되지 않게 */
+  word-break: keep-all;
+  text-wrap: balance;
+  color: #ffffff;
+  text-shadow:
+    0 0 14px rgba(255, 255, 255, 0.55),
+    0 0 34px rgba(175, 205, 255, 0.45),
+    0 0 70px rgba(70, 120, 255, 0.5);
+}
+.hero-sub {
+  margin: 1rem auto 0;
+  max-width: 34rem;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  word-break: keep-all;
+  text-wrap: balance;
+  color: #cdd2e6;
+}
+
+/* 등장 애니메이션 — "움직임 줄이기"를 켠 사용자에게는 보여주지 않는다 */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-eyebrow {
+    animation: hero-track 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s both;
+  }
+  .hero-title {
+    animation: hero-rise 1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s both;
+  }
+  .hero-sub {
+    animation: hero-fade 0.8s ease-out 0.9s both;
+  }
+}
+@keyframes hero-track {
+  from {
+    opacity: 0;
+    letter-spacing: 0.9em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.46em;
+  }
+}
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@keyframes hero-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* 보고서 인쇄 (Design Ref: §2.2 ③) — 다크 모드여도 흰 바탕·검은 글씨로 인쇄한다 */
 @media print {
   @page {

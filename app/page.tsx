@@ -21,12 +21,11 @@ export default function Home() {
   return (
     <div className="flex flex-1 justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex w-full max-w-3xl flex-col gap-10 bg-white px-6 py-16 sm:px-16 dark:bg-black print:max-w-none print:p-0">
-        {/* 앱 이름과 한 줄 설명 */}
-        <header className="flex flex-col gap-3 print:hidden">
-          <h1 className="text-4xl font-bold tracking-tight text-black sm:text-5xl dark:text-zinc-50">
-            온비드 통계 요청 쿼리 리뷰어
-          </h1>
-          <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+        {/* 앱 이름과 한 줄 설명 — 딥 네이비 머리 영역 (스타일은 globals.css의 .hero) */}
+        <header className="hero print:hidden">
+          <p className="hero-eyebrow">QUERY REVIEWER</p>
+          <h1 className="hero-title">온비드 통계 요청 쿼리 리뷰어</h1>
+          <p className="hero-sub">
             감사·자료 제출용 통계 쿼리를 어떤 방향으로 작성할지 안내하고, 결과 엑셀의 합계 오류를
             점검해 주는 도구입니다.
           </p>
