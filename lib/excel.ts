@@ -81,6 +81,24 @@ function rowKind(sheet: SheetData, row: number): "total" | "subtotal" | "detail"
   return "detail";
 }
 
+type RowKind = ReturnType<typeof rowKind>;
+
+// 표 모양 분석: 행 종류(세부/소계/합계)와 더하는 열 — 세로 합계 점검과 칸 점검이 같은 기준을 쓴다
+function tableShape(sheet: SheetData, headerRow: number) {
+  const kinds = new Map<number, RowKind>();
+  for (let r = headerRow + 1; r <= sheet.maxRow; r++) kinds.set(r, rowKind(sheet, r));
+
+  // 더하는 열: 세부 행에 숫자가 있고, 머리글에 비율·%·순위·번호가 없는 열
+  const sumCols: number[] = [];
+  for (let c = 1; c <= sheet.maxCol; c++) {
+    const header = cellAt(sheet, headerRow, c);
+    if (typeof header === "string" && NO_SUM_HEADER.test(header)) continue;
+    const hasNumber = [...kinds].some(([r, k]) => k === "detail" && toNumber(cellAt(sheet, r, c)) !== null);
+    if (hasNumber) sumCols.push(c);
+  }
+  return { kinds, sumCols };
+}
+
 export interface TotalsCheck {
   issues: ExcelIssue[];
   checkedCells: number; // 다시 계산해 비교한 합계·소계 칸 수
@@ -92,19 +110,9 @@ export function checkTotals(sheet: SheetData): TotalsCheck {
   const headerRow = findHeaderRow(sheet);
   if (headerRow === null) return { issues: [], checkedCells: 0, message: "머리글 행(글자 칸이 2개 이상인 행)을 찾지 못했어요." };
 
-  const kinds = new Map<number, ReturnType<typeof rowKind>>();
-  for (let r = headerRow + 1; r <= sheet.maxRow; r++) kinds.set(r, rowKind(sheet, r));
+  const { kinds, sumCols } = tableShape(sheet, headerRow);
   if (![...kinds.values()].some((k) => k !== "detail")) {
     return { issues: [], checkedCells: 0, message: "'합계·총계·소계·계'라고만 적힌 행을 찾지 못했어요." };
-  }
-
-  // 더하는 열: 세부 행에 숫자가 있고, 머리글에 비율·%·순위·번호가 없는 열
-  const sumCols: number[] = [];
-  for (let c = 1; c <= sheet.maxCol; c++) {
-    const header = cellAt(sheet, headerRow, c);
-    if (typeof header === "string" && NO_SUM_HEADER.test(header)) continue;
-    const hasNumber = [...kinds].some(([r, k]) => k === "detail" && toNumber(cellAt(sheet, r, c)) !== null);
-    if (hasNumber) sumCols.push(c);
   }
 
   const issues: ExcelIssue[] = [];
@@ -143,4 +151,73 @@ export function checkTotals(sheet: SheetData): TotalsCheck {
     }
   }
   return { issues, checkedCells, message: null };
+}
+
+// "-"는 0 대신 흔히 쓰는 표시라 빈칸·숫자 아님으로 보지 않는다
+const ZERO_MARKS = new Set(["-", "–", "—"]);
+
+function issueAt(type: ExcelIssue["type"], r: number, c: number, message: string, expected?: number, actual?: number): ExcelIssue {
+  const column = colName(c);
+  return { type, cell: `${column}${r}`, row: r, column, message, expected, actual };
+}
+
+// Design Ref: §2.2 ② "칸 점검 규칙" — 가로 합계, 빈칸, 중복 행, 숫자 아님 (PLAN 작업 11-1)
+export function checkCells(sheet: SheetData): ExcelIssue[] {
+  const headerRow = findHeaderRow(sheet);
+  if (headerRow === null) return [];
+  const { kinds, sumCols } = tableShape(sheet, headerRow);
+  const issues: ExcelIssue[] = [];
+
+  // ① 가로 합계: 머리글이 정확히 "합계·총계·계"인 열 = 같은 행의 다른 숫자 열의 합
+  const rowTotalCols = sumCols.filter((c) => {
+    const h = cellAt(sheet, headerRow, c);
+    return typeof h === "string" && TOTAL_WORDS.includes(h.trim());
+  });
+  const operandCols = sumCols.filter((c) => !rowTotalCols.includes(c));
+  for (const tc of rowTotalCols) {
+    for (const r of kinds.keys()) {
+      const written = toNumber(cellAt(sheet, r, tc));
+      if (written === null) continue;
+      const parts = operandCols.map((c) => toNumber(cellAt(sheet, r, c))).filter((v): v is number => v !== null);
+      if (parts.length === 0) continue;
+      const expected = parts.reduce((a, b) => a + b, 0);
+      const diff = Math.abs(Math.round((written - expected) * 10_000) / 10_000);
+      if (diff >= 1) {
+        issues.push(
+          issueAt("가로 합계 불일치", r, tc,
+            `같은 행의 숫자를 더한 값은 ${expected.toLocaleString()}인데 합계 칸에는 ${written.toLocaleString()}로 적혀 있어요 (차이 ${diff.toLocaleString()}).`,
+            expected, written),
+        );
+      }
+    }
+  }
+
+  // ② 빈칸 · ③ 숫자 아님: 숫자가 있는 행의 숫자 열만 본다
+  for (const [r, kind] of kinds) {
+    const values = sumCols.map((c) => cellAt(sheet, r, c));
+    if (!values.some((v) => toNumber(v) !== null)) continue; // 숫자가 하나도 없는 행(제목·빈 줄 등)은 건너뜀
+    sumCols.forEach((c, i) => {
+      const v = values[i];
+      if (v === undefined) {
+        if (kind === "detail") issues.push(issueAt("빈칸", r, c, "숫자가 있어야 할 칸이 비어 있어요. 0이라면 0을 적어 주세요."));
+      } else if (typeof v === "string" && toNumber(v) === null && !ZERO_MARKS.has(v.trim())) {
+        issues.push(issueAt("숫자 아님", r, c, `숫자 칸에 "${v}"라고 적혀 있어요. 합계 계산에서 빠졌어요.`));
+      }
+    });
+  }
+
+  // ④ 중복 행: 세부 행 전체 내용이 위의 행과 똑같으면
+  const seen = new Map<string, number>();
+  for (const [r, kind] of kinds) {
+    if (kind !== "detail") continue;
+    const cells: string[] = [];
+    for (let c = 1; c <= sheet.maxCol; c++) cells.push(String(cellAt(sheet, r, c) ?? ""));
+    if (cells.every((x) => x === "")) continue;
+    const key = cells.join("\u0001");
+    const first = seen.get(key);
+    if (first !== undefined) issues.push(issueAt("중복 행", r, 1, `${first}행과 내용이 똑같아요. 같은 자료가 두 번 들어갔는지 확인해 주세요.`));
+    else seen.set(key, r);
+  }
+
+  return issues;
 }

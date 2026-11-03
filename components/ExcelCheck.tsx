@@ -2,7 +2,7 @@
 // Design Ref: §5.3 ExcelCheck — 엑셀 선택, 합계·소계 재계산, 기간·단위 대조 결과 표 (PLAN 작업 10~12)
 // 엑셀 파일은 브라우저에서만 읽고, 서버에는 제목·단위·머리글 글자만 보낸다.
 import { useState } from "react";
-import { checkExcelFile, checkSheetShape, checkTotals, extractLabels } from "@/lib/excel";
+import { checkCells, checkExcelFile, checkSheetShape, checkTotals, extractLabels } from "@/lib/excel";
 import { readFirstSheet, XlsxReadError } from "@/lib/xlsx";
 import type { ApiError, ExcelCheckResult, ExcelIssue, ExcelLabelResponse, GuideMode } from "@/lib/types";
 
@@ -13,11 +13,16 @@ const EXAMPLES = [
   { file: "excel-03.xlsx", label: "excel-03 — 기관 유형별 공고 현황 (req-03과 짝)" },
   { file: "excel-04.xlsx", label: "excel-04 — 분기별 단독 입찰 비율 (req-04와 짝)" },
   { file: "excel-05.xlsx", label: "excel-05 — 진행 중 공고 상위 10개 (req-05와 짝)" },
+  { file: "excel-06.xlsx", label: "excel-06 — 가로 합계·빈칸·중복·글자 섞임" },
 ];
 
 const TYPE_STYLE: Record<ExcelIssue["type"], string> = {
   "합계 불일치": "bg-red-600 text-white",
   "소계 불일치": "bg-red-600 text-white",
+  "가로 합계 불일치": "bg-red-600 text-white",
+  "숫자 아님": "bg-red-600 text-white",
+  "중복 행": "bg-amber-400 text-black",
+  "빈칸": "bg-amber-400 text-black",
   "기간 불일치": "bg-amber-400 text-black",
   "단위 불일치": "bg-amber-400 text-black",
 };
@@ -57,6 +62,8 @@ export default function ExcelCheck({ requirement, onResult }: Props) {
       const totals = checkTotals(sheet);
       setCheckedCells(totals.checkedCells);
       setNotice(totals.message);
+      // ①-1 가로 합계·빈칸·숫자 아님·중복 행 — 코드로 점검
+      const cellIssues = checkCells(sheet);
 
       // ② 기간·단위 — 글자 칸만 서버로 보내 대조 (실패해도 ①의 결과는 그대로 보여준다)
       let labelIssues: ExcelIssue[] = [];
@@ -84,7 +91,7 @@ export default function ExcelCheck({ requirement, onResult }: Props) {
         fileName,
         sheetName: sheet.name,
         rowCount: sheet.maxRow,
-        issues: [...totals.issues, ...labelIssues],
+        issues: [...totals.issues, ...cellIssues, ...labelIssues],
       };
       setResult(combined);
       onResult(combined);

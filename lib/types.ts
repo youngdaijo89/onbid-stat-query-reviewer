@@ -55,9 +55,17 @@ export interface ApiError {
   error: { code: ApiErrorCode; message: string };
 }
 
-// 엑셀 특이점 (PLAN 작업 10~12에서 사용)
+// 엑셀 특이점 (PLAN 작업 10~12, 11-1에서 사용)
 export interface ExcelIssue {
-  type: "합계 불일치" | "소계 불일치" | "기간 불일치" | "단위 불일치";
+  type:
+    | "합계 불일치"
+    | "소계 불일치"
+    | "가로 합계 불일치"
+    | "빈칸"
+    | "숫자 아님"
+    | "중복 행"
+    | "기간 불일치"
+    | "단위 불일치";
   cell: string; // 예: "C15"
   row: number; // 예: 15
   column: string; // 예: "C"

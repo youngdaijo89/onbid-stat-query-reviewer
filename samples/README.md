@@ -12,6 +12,7 @@ PLAN.md 작업 1에서 만든 시험 자료다. 앱이 제대로 동작하는지
 | `table-definition.txt` | 가상 테이블 4개의 정의서 (코드표·관계 포함) | 가이드 입력칸 ② |
 | `answers/answer-01~05.sql` | 요구문별 정답 쿼리 (Oracle) | SC-2 측정 |
 | `excel/excel-01~05.xlsx` | 합계·소계를 일부러 틀리게 만든 결과 엑셀 | 엑셀 점검, SC-3 측정 |
+| `excel/excel-06.xlsx` | 가로 합계·빈칸·중복 행·숫자 아님을 일부러 넣은 엑셀 | 칸 점검 (작업 11-1) |
 | `answer-key.md` | 요구문별 정답 조건, 엑셀별 정답 오류 위치 | SC-1·SC-3 채점 |
 | `mock-guide.json` | KOBI 없이 개발할 때 쓰는 가이드 예시 응답 | 작업 5 |
 | `mock-excel.json` | KOBI 없이 개발할 때 쓰는 엑셀 대조 예시 응답 | 작업 12 |

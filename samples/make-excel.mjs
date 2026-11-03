@@ -129,6 +129,34 @@ function excel04() {
   };
 }
 
+// 칸 점검(작업 11-1)용: 가로 합계 열, 빈칸, 중복 행, 숫자 칸의 글자. 세로 합계는 "숫자만 더한 값"으로 맞춰 두어
+// 새 규칙의 오류만 드러나게 했다. (E9는 E5 오류 때문에 함께 어긋나는 결과 — 정답표에 적음)
+function excel06() {
+  return {
+    file: "excel-06.xlsx",
+    requirement: "(짝 없음)",
+    rows: [
+      ["2025년 분기별 물건 유형별 낙찰 건수"],
+      ["(단위: 건)"],
+      ["분기", "부동산", "자동차", "기타", "합계"],
+      ["1분기", 30, 12, 5, 47],
+      ["2분기", 28, 10, 6, 46], // 합계 46 ← 실제 44
+      ["3분기", 35, null, 7, 42], // 자동차 빈칸
+      ["1분기", 30, 12, 5, 47], // 4행과 똑같은 행
+      ["4분기", 33, 11, "1O", 44], // 기타에 글자(영문 O)
+      ["합계", 156, 45, 23, 226],
+    ],
+    errors: [
+      { type: "가로 합계 불일치", cell: "E5", expected: 44, actual: 46 },
+      { type: "빈칸", cell: "C6", note: "자동차 칸이 비어 있음" },
+      { type: "중복 행", cell: "A7", note: "4행과 똑같음" },
+      { type: "숫자 아님", cell: "D8", note: '"1O" (숫자 0이 아닌 영문 O)' },
+      { type: "가로 합계 불일치", cell: "E9", expected: 224, actual: 226 },
+    ],
+    notes: ["E9는 E5를 잘못 적은 탓에 함께 어긋난 결과다 (156+45+23=224).", "세로 합계·소계 오류는 없어야 한다."],
+  };
+}
+
 function excel05() {
   const counts = [48, 41, 37, 33, 30, 28, 25, 22, 20, 18];
   const wrongTotal = sum(counts) + 1;
@@ -260,7 +288,7 @@ function zip(files) {
 
 mkdirSync(OUT_DIR, { recursive: true });
 mkdirSync(PUBLIC_DIR, { recursive: true });
-for (const sample of [excel01(), excel02(), excel03(), excel04(), excel05()]) {
+for (const sample of [excel01(), excel02(), excel03(), excel04(), excel05(), excel06()]) {
   const xlsx = zip(xlsxParts(sample.rows));
   writeFileSync(join(OUT_DIR, sample.file), xlsx);
   writeFileSync(join(PUBLIC_DIR, sample.file), xlsx);
