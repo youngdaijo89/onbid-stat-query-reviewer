@@ -1,7 +1,7 @@
 // Design Ref: §8.1 — 일부러 틀리게 만든 시험용 엑셀 5개를 만든다 (SC-3 측정용).
 // 새 패키지 없이 Node 기본 기능만으로 .xlsx(zip 묶음)를 만든다.
 // 실행: node samples/make-excel.mjs
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { crc32 } from "node:zlib";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -157,37 +157,48 @@ const escapeXml = (s) =>
 
 const colName = (i) => String.fromCharCode(65 + i); // 0 → A (이 자료는 D열까지만 씀)
 
-function sheetXml(rows) {
+// opts.boldHeader: 1행을 굵게 / opts.widths: 열 너비 목록 (정의서 템플릿용, 시험 엑셀에는 쓰지 않음)
+function sheetXml(rows, opts = {}) {
   const body = rows
     .map((row, r) => {
+      const style = opts.boldHeader && r === 0 ? ' s="1"' : "";
       const cells = row
         .map((v, c) => {
           if (v === null || v === undefined) return "";
           const ref = `${colName(c)}${r + 1}`;
-          if (typeof v === "number") return `<c r="${ref}"><v>${v}</v></c>`;
-          return `<c r="${ref}" t="inlineStr"><is><t>${escapeXml(v)}</t></is></c>`;
+          if (typeof v === "number") return `<c r="${ref}"${style}><v>${v}</v></c>`;
+          return `<c r="${ref}"${style} t="inlineStr"><is><t>${escapeXml(v)}</t></is></c>`;
         })
         .join("");
       return `<row r="${r + 1}">${cells}</row>`;
     })
     .join("");
+  const cols = opts.widths
+    ? `<cols>${opts.widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join("")}</cols>`
+    : "";
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${body}</sheetData></worksheet>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${cols}<sheetData>${body}</sheetData></worksheet>`;
 }
 
-function xlsxParts(rows) {
+const BASIC_STYLES = `<fonts count="1"><font><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>`;
+// 굵은 글씨 + 연한 배경 머리글 스타일(s="1")을 더한 버전
+const HEADER_STYLES = `<fonts count="2"><font><sz val="11"/><name val="맑은 고딕"/></font><font><b/><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F2"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>`;
+
+function xlsxParts(rows, opts = {}) {
+  const sheetName = escapeXml(opts.sheetName ?? "Sheet1");
+  const styles = opts.boldHeader ? HEADER_STYLES : BASIC_STYLES;
   return {
     "[Content_Types].xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
     "_rels/.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
     "xl/workbook.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${sheetName}" sheetId="1" r:id="rId1"/></sheets></workbook>`,
     "xl/_rels/workbook.xml.rels": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,
     "xl/styles.xml": `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>`,
-    "xl/worksheets/sheet1.xml": sheetXml(rows),
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${styles}</styleSheet>`,
+    "xl/worksheets/sheet1.xml": sheetXml(rows, opts),
   };
 }
 
@@ -260,3 +271,44 @@ for (const sample of [excel01(), excel02(), excel03(), excel04(), excel05()]) {
   }
   for (const n of sample.notes ?? []) console.log(`  * ${n}`);
 }
+
+// ---------- 테이블 정의서 엑셀 (템플릿 + 예시) ----------
+// 화면의 [템플릿 내려받기]·[예시 엑셀로 채우기]가 쓴다. 예시는 table-definition.txt에서 만들어 내용이 하나로 유지된다.
+
+const DEF_HEADER = ["테이블명", "테이블 설명", "컬럼명", "데이터 타입", "컬럼 설명"];
+const DEF_OPTS = { boldHeader: true, widths: [20, 22, 20, 16, 50], sheetName: "테이블정의서" };
+
+// "■ 테이블 (설명)" / "- 컬럼 타입 설명" 형식의 글을 엑셀 행으로 바꾼다 (컬럼이 없는 ■ 줄은 건너뜀)
+function definitionRows(text) {
+  const rows = [];
+  let table = null;
+  let firstOfTable = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith("■")) {
+      const m = /^■\s*(\S+)\s*(?:\((.*)\))?/.exec(line);
+      table = m ? { name: m[1], desc: m[2] ?? "" } : null;
+      firstOfTable = true;
+    } else if (line.startsWith("-") && table) {
+      const [name, type = "", ...rest] = line.slice(1).trim().split(/\s+/);
+      // 같은 테이블의 두 번째 줄부터는 테이블명을 비워 둔다 (비어 있으면 위 행과 같은 테이블로 읽음)
+      rows.push(firstOfTable ? [table.name, table.desc, name, type, rest.join(" ")] : [null, null, name, type, rest.join(" ")]);
+      firstOfTable = false;
+    }
+  }
+  return rows;
+}
+
+const TEMPLATE_DIR = join(SAMPLES_DIR, "..", "public", "templates");
+mkdirSync(TEMPLATE_DIR, { recursive: true });
+
+const template = [
+  DEF_HEADER,
+  ["VT_SAMPLE", "예시 테이블 - 이 두 줄은 지우고 작성", "SAMPLE_ID", "VARCHAR2(20)", "예시 ID (PK)"],
+  [null, null, "SAMPLE_CD", "CHAR(2)", "예시 코드 (01: 가, 02: 나)"],
+];
+writeFileSync(join(TEMPLATE_DIR, "table-definition-template.xlsx"), zip(xlsxParts(template, DEF_OPTS)));
+
+const example = [DEF_HEADER, ...definitionRows(readFileSync(join(SAMPLES_DIR, "table-definition.txt"), "utf8"))];
+writeFileSync(join(PUBLIC_DIR, "table-definition.xlsx"), zip(xlsxParts(example, DEF_OPTS)));
+console.log(`\n테이블 정의서: 템플릿 1개, 예시(컬럼 ${example.length - 1}개) 1개를 만들었어요.`);

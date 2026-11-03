@@ -1,5 +1,6 @@
 "use client";
-// Design Ref: §5.3 GuideForm — 입력칸 2개, 글자·줄 수, 생성 버튼 (PLAN 작업 3·4)
+// Design Ref: §5.3 GuideForm — 입력칸 2개, 글자·줄 수, 정의서 엑셀 불러오기, 생성 버튼 (PLAN 작업 3·4·7-1)
+import TableDefUpload from "@/components/TableDefUpload";
 import { countLines, MAX_REQUIREMENT_CHARS, MAX_TABLEDEF_LINES, validateGuideInput } from "@/lib/validate";
 
 // 정의서 입력 형식 예시 (Design Ref: §2.2 "테이블 정의서 입력 형식")
@@ -71,11 +72,14 @@ export default function GuideForm({
           </span>
         </label>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-black dark:text-zinc-50">
+        {/* 정의서는 직접 붙여넣거나 엑셀(템플릿)로 불러온다 — 버튼이 있어 label 대신 div로 감싼다 */}
+        <div className="flex flex-col gap-2">
+          <label htmlFor="tabledef-input" className="text-sm font-medium text-black dark:text-zinc-50">
             테이블 정의서 <span className="text-red-600">(필수)</span>
-          </span>
+          </label>
+          <TableDefUpload disabled={loading} onLoaded={onTableDefChange} />
           <textarea
+            id="tabledef-input"
             value={tableDef}
             onChange={(e) => onTableDefChange(e.target.value)}
             rows={12}
@@ -87,7 +91,7 @@ export default function GuideForm({
           >
             {defLines} / {MAX_TABLEDEF_LINES}줄
           </span>
-        </label>
+        </div>
       </div>
 
       <div className="flex flex-col items-end gap-2">
