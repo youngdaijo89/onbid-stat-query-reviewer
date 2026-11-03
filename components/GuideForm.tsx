@@ -53,7 +53,8 @@ export default function GuideForm({
         </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* 요구사항문 → 테이블 정의서 순서로 위아래 배치 (정의서 쪽 버튼·안내가 좁아지지 않게) */}
+      <div className="flex flex-col gap-6">
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium text-black dark:text-zinc-50">
             요구사항문 <span className="text-red-600">(필수)</span>
@@ -61,7 +62,7 @@ export default function GuideForm({
           <textarea
             value={requirement}
             onChange={(e) => onRequirementChange(e.target.value)}
-            rows={12}
+            rows={8}
             placeholder="요청처가 보낸 자료 요구 원문을 그대로 붙여넣으세요."
             className="rounded-md border border-zinc-300 bg-white p-3 text-sm leading-6 text-black placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
           />
