@@ -3,8 +3,9 @@
 import mockExcel from "@/samples/mock-excel.json";
 import mockGuide from "@/samples/mock-guide.json";
 import { AiNotReadyError } from "@/lib/aiErrors";
-import { requestKobiExcelLabels, requestKobiGuide } from "@/lib/kobi";
-import { requestOpenAiExcelLabels, requestOpenAiGuide } from "@/lib/openai";
+import { requestKobi, requestKobiExcelLabels, requestKobiGuide } from "@/lib/kobi";
+import { requestOpenAi, requestOpenAiExcelLabels, requestOpenAiGuide } from "@/lib/openai";
+import { sqlFixMessages } from "@/lib/prompt";
 import type { ExcelLabel, GuideMode, GuideRequest } from "@/lib/types";
 
 export { AiNotReadyError };
@@ -29,6 +30,20 @@ export async function requestGuide(request: GuideRequest): Promise<unknown> {
       return data;
     }
   }
+}
+
+// 코드 검사에 걸린 쿼리를 한 번 다시 고쳐 달라고 요청한다 (PLAN 작업 8-2). 예시 응답 모드에는 고칠 AI가 없어 null.
+export async function requestSqlFix(
+  request: GuideRequest,
+  skeleton: string,
+  exampleQuery: string,
+  problems: string[],
+): Promise<unknown> {
+  const provider = getAiProvider();
+  const messages = sqlFixMessages(request, skeleton, exampleQuery, problems);
+  if (provider === "openai") return requestOpenAi(messages);
+  if (provider === "kobi") return requestKobi(messages);
+  return null;
 }
 
 // 엑셀 제목·단위·머리글의 기간·단위를 요구사항문과 대조 (PLAN 작업 12)

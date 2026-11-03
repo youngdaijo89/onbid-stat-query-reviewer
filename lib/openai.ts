@@ -2,7 +2,7 @@
 // 내 PC 테스트 전용. OPENAI_API_KEY는 여기서만 읽고, Vercel 운영 환경·내부망 서버에는 등록하지 않는다. 실패해도 다른 AI로 넘어가지 않는다.
 import { AiConfigError } from "@/lib/aiErrors";
 import { chatJson, type ChatTarget } from "@/lib/chatClient";
-import { excelLabelMessages, guideMessages } from "@/lib/prompt";
+import { type ChatMessage, excelLabelMessages, guideMessages } from "@/lib/prompt";
 import type { ExcelLabel, GuideRequest } from "@/lib/types";
 
 // 모델은 .env의 OPENAI_MODEL로 바꿀 수 있다 (없으면 기본값)
@@ -24,6 +24,11 @@ function target(): ChatTarget {
 
 export function requestOpenAiGuide(request: GuideRequest): Promise<unknown> {
   return chatJson(target(), guideMessages(request));
+}
+
+// 이미 만들어 둔 지시문(예: 쿼리 자동 수정)을 그대로 보낸다
+export function requestOpenAi(messages: ChatMessage[]): Promise<unknown> {
+  return chatJson(target(), messages);
 }
 
 export function requestOpenAiExcelLabels(requirement: string, labels: ExcelLabel[]): Promise<unknown> {

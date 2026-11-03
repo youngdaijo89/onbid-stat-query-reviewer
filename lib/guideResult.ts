@@ -80,9 +80,37 @@ const NOT_ORACLE: [RegExp, string][] = [
   [/\b(IFNULL|ISNULL|DATE_FORMAT|DATEADD|DATEDIFF|GETDATE|NOW)\s*\(/i, "Oracle에 없는 함수가 있음 → NVL·TO_CHAR·SYSDATE 등으로 고치세요"],
 ];
 
+// 같은 절이 SELECT 수보다 많으면 줄을 고치다 옛 줄을 남긴 것 (실측: 자동 수정 때 GROUP BY 두 줄)
+const count = (code: string, re: RegExp) => (code.match(re) ?? []).length;
+
 export function notOracleHints(label: string, sql: string): string[] {
   const code = codeOnly(sql);
-  return NOT_ORACLE.filter(([re]) => re.test(code)).map(([, msg]) => `${label}: ${msg}`);
+  const hints = NOT_ORACLE.filter(([re]) => re.test(code)).map(([, msg]) => `${label}: ${msg}`);
+  const selects = count(code, /\bSELECT\b/gi);
+  for (const clause of ["GROUP BY", "ORDER BY"]) {
+    if (count(code, new RegExp(`\\b${clause.replace(" ", "\\s+")}\\b`, "gi")) > selects) {
+      hints.push(`${label}: ${clause}가 두 번 들어 있음 → 한 줄로 합치세요`);
+    }
+  }
+  return hints;
+}
+
+// 자동 수정(PLAN 작업 8-2)에 넘길 "고칠 점" 목록 — 안전 검사에 걸리면 그 이유, 아니면 Oracle 문법 힌트
+export function sqlProblems(label: string, sql: string): string[] {
+  const reason = unsafeSqlReason(sql);
+  return reason ? [`${label}: ${reason}`] : notOracleHints(label, sql);
+}
+
+// AI가 고쳐 보낸 답이 {skeleton, exampleQuery} 모양이고 길이 상한 안인지
+export function isSqlFix(v: unknown): v is { skeleton: string; exampleQuery: string } {
+  return (
+    isObject(v) &&
+    isString(v.skeleton) &&
+    isString(v.exampleQuery) &&
+    v.exampleQuery.trim() !== "" &&
+    v.skeleton.length <= LIMITS.query &&
+    v.exampleQuery.length <= LIMITS.query
+  );
 }
 
 // PRD must ① 규칙 5 — 완성 쿼리 예시 첫 줄의 검증 필요 표시는 AI 답에 기대지 않고 코드가 항상 붙인다

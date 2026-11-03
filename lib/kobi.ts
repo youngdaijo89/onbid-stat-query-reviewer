@@ -4,7 +4,7 @@
 // 다를 수 있는 부분(주소·인증 머리글·모델·JSON 모드·system 역할)은 .env로 바꿀 수 있게 했다 (INTRANET.md 2번).
 import { AiConfigError } from "@/lib/aiErrors";
 import { chatJson, type ChatTarget } from "@/lib/chatClient";
-import { excelLabelMessages, guideMessages } from "@/lib/prompt";
+import { type ChatMessage, excelLabelMessages, guideMessages } from "@/lib/prompt";
 import type { ExcelLabel, GuideRequest } from "@/lib/types";
 
 const DEFAULT_MODEL = "gemma3-31b-it";
@@ -38,6 +38,11 @@ function target(): ChatTarget {
 
 export function requestKobiGuide(request: GuideRequest): Promise<unknown> {
   return chatJson(target(), guideMessages(request));
+}
+
+// 이미 만들어 둔 지시문(예: 쿼리 자동 수정)을 그대로 보낸다
+export function requestKobi(messages: ChatMessage[]): Promise<unknown> {
+  return chatJson(target(), messages);
 }
 
 export function requestKobiExcelLabels(requirement: string, labels: ExcelLabel[]): Promise<unknown> {
