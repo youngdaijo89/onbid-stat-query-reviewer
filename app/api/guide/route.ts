@@ -1,7 +1,8 @@
-// Design Ref: §4.2 — POST /api/guide: 쿼리 작성 가이드 생성 (PLAN 작업 5)
+// Design Ref: §4.2 — POST /api/guide: 쿼리 작성 가이드 생성 (PLAN 작업 5·8·8-1)
 import { checkNamesAgainstDef } from "@/lib/tableDef";
-import { isGuideResult, withVerifyHeader } from "@/lib/guideResult";
-import { AiNotReadyError, getAiProvider, requestGuide } from "@/lib/ai";
+import { isGuideResult, notOracleHints, unsafeSqlReason, withinLimits, withVerifyHeader } from "@/lib/guideResult";
+import { getAiProvider, requestGuide } from "@/lib/ai";
+import { aiFailure } from "@/lib/aiErrors";
 import { validateGuideInput } from "@/lib/validate";
 import type { ApiError, ApiErrorCode, GuideResponse } from "@/lib/types";
 
@@ -32,21 +33,31 @@ export async function POST(request: Request) {
     raw = await requestGuide(input.value);
   } catch (err) {
     // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4)
-    if (err instanceof AiNotReadyError) {
-      return fail(503, "AI_NOT_READY", "선택한 AI 연결은 아직 준비 중이에요. 예시 응답 모드로 사용해 주세요.");
-    }
-    console.error("guide: AI 호출 실패", err instanceof Error ? err.name : "unknown");
-    return fail(502, "KOBI_ERROR", "가이드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
+    console.error("guide: AI 호출 실패", err instanceof Error ? err.constructor.name : "unknown");
+    const f = aiFailure(err, "가이드를 만들지");
+    return fail(f.status, f.code, f.message);
   }
 
-  if (!isGuideResult(raw)) {
+  if (!isGuideResult(raw) || !withinLimits(raw)) {
     console.error("guide: AI 답 모양이 맞지 않음");
     return fail(502, "KOBI_ERROR", "가이드를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  // 코드가 지킬 규칙: 정의서 이름 대조, 완성 쿼리 첫 줄 검증 필요 표시
+  // 코드가 지킬 규칙: 정의서 이름 대조, SQL 안전 검사, 완성 쿼리 첫 줄 검증 필요 표시
   const checked = checkNamesAgainstDef(raw, input.value.tableDef);
-  const data = { ...checked, exampleQuery: withVerifyHeader(checked.exampleQuery) };
+  const needsCheck = checked.needsCheck.filter((s) => s.trim() !== ""); // AI가 빈 문자열을 넣는 일이 있음
+  const guard = (label: string, sql: string) => {
+    const reason = unsafeSqlReason(sql);
+    if (!reason) {
+      needsCheck.push(...notOracleHints(label, sql));
+      return sql;
+    }
+    needsCheck.push(`${label}를 숨겼어요 — ${reason}. 직접 작성해 주세요.`);
+    return `-- (안전을 위해 숨김: ${reason})`;
+  };
+  const skeleton = guard("쿼리 뼈대", checked.skeleton);
+  const exampleQuery = withVerifyHeader(guard("완성 쿼리 예시", checked.exampleQuery));
+  const data = { ...checked, skeleton, exampleQuery, needsCheck };
 
   return Response.json({ data, mode: getAiProvider() } satisfies GuideResponse);
 }

@@ -30,6 +30,61 @@ export function isGuideResult(v: unknown): v is GuideResult {
   );
 }
 
+// 실제 AI 답은 지나치게 길 수 있어 칸마다 상한을 둔다 (CHECK 보안 #3 — 답 모양 엄격 검사)
+const LIMITS = { text: 2_000, query: 8_000, list: 60 };
+export function withinLimits(r: GuideResult): boolean {
+  const short = (s: string) => s.length <= LIMITS.text;
+  return (
+    short(r.summary) &&
+    r.skeleton.length <= LIMITS.query &&
+    r.exampleQuery.length <= LIMITS.query &&
+    [r.conditions, r.tables, r.cautions, r.needsCheck].every((a) => a.length <= LIMITS.list) &&
+    r.conditions.every((c) => short(c.item) && short(c.value) && short(c.source)) &&
+    r.tables.every((t) => short(t.table) && short(t.joinNote) && t.columns.length <= LIMITS.list) &&
+    r.cautions.every((c) => short(c.text)) &&
+    r.needsCheck.every(short)
+  );
+}
+
+// AI가 만든 SQL은 읽기 전용 SELECT 한 문장만 허용한다 (CHECK 보안 #2 — 복사해 실행했을 때 데이터가 바뀌거나 밖으로 나가지 않게)
+const FORBIDDEN =
+  /\b(INSERT|UPDATE|DELETE|MERGE|DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|EXEC(UTE)?|BEGIN|DECLARE|CALL|UTL_HTTP|UTL_TCP|UTL_SMTP|UTL_FILE|DBMS_\w+|HTTPURITYPE)\b/i;
+const HIDDEN_CHARS = /[​-‏‪-‮⁦-⁩﻿]/; // 눈에 안 보이는 글자·방향 바꾸는 글자
+
+// 주석과 따옴표 안 글자는 빼고 본다 (근거 주석 속 단어 때문에 잘못 걸리지 않게)
+const codeOnly = (sql: string) =>
+  sql
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/--[^\n]*/g, " ")
+    .replace(/'(?:[^']|'')*'/g, "''")
+    .trim();
+
+// 문제가 없으면 null, 있으면 사람이 읽을 이유를 돌려준다
+export function unsafeSqlReason(sql: string): string | null {
+  if (sql.trim() === "") return null;
+  if (HIDDEN_CHARS.test(sql)) return "눈에 보이지 않는 특수 문자가 들어 있음";
+  const code = codeOnly(sql);
+  if (!/^(SELECT|WITH)\b/i.test(code)) return "SELECT로 시작하지 않음";
+  if (/;\s*\S/.test(code)) return "문장이 두 개 이상임";
+  const bad = FORBIDDEN.exec(code);
+  if (bad) return `허용되지 않는 명령(${bad[1].toUpperCase()})이 들어 있음`;
+  return null;
+}
+
+// AI가 다른 DB 문법을 섞는 일이 잦아(실측: WITH ROLLUP, MONTH()) 코드가 찾아서 "확인 필요"로 알린다. 쿼리는 숨기지 않는다.
+const NOT_ORACLE: [RegExp, string][] = [
+  [/\bWITH\s+ROLLUP\b/i, "WITH ROLLUP은 Oracle 문법이 아님 → GROUP BY ROLLUP(...)으로 고치세요"],
+  [/\bLIMIT\s+\d/i, "LIMIT은 Oracle 문법이 아님 → FETCH FIRST n ROWS ONLY로 고치세요"],
+  [/\bSELECT\s+TOP\b/i, "SELECT TOP은 Oracle 문법이 아님 → FETCH FIRST n ROWS ONLY로 고치세요"],
+  [/\b(YEAR|MONTH|DAY|QUARTER)\s*\(/i, "YEAR()·MONTH() 같은 함수는 Oracle에 없음 → EXTRACT(...) 또는 TO_CHAR(날짜, 'Q')로 고치세요"],
+  [/\b(IFNULL|ISNULL|DATE_FORMAT|DATEADD|DATEDIFF|GETDATE|NOW)\s*\(/i, "Oracle에 없는 함수가 있음 → NVL·TO_CHAR·SYSDATE 등으로 고치세요"],
+];
+
+export function notOracleHints(label: string, sql: string): string[] {
+  const code = codeOnly(sql);
+  return NOT_ORACLE.filter(([re]) => re.test(code)).map(([, msg]) => `${label}: ${msg}`);
+}
+
 // PRD must ① 규칙 5 — 완성 쿼리 예시 첫 줄의 검증 필요 표시는 AI 답에 기대지 않고 코드가 항상 붙인다
 export const VERIFY_NOTICE = "예시 — 실행 전 작성자 검증 필요";
 

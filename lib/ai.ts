@@ -4,7 +4,7 @@ import mockExcel from "@/samples/mock-excel.json";
 import mockGuide from "@/samples/mock-guide.json";
 import { AiNotReadyError } from "@/lib/aiErrors";
 import { requestKobiGuide } from "@/lib/kobi";
-import { requestOpenAiGuide } from "@/lib/openai";
+import { requestOpenAiExcelLabels, requestOpenAiGuide } from "@/lib/openai";
 import type { ExcelLabel, GuideMode, GuideRequest } from "@/lib/types";
 
 export { AiNotReadyError };
@@ -32,12 +32,10 @@ export async function requestGuide(request: GuideRequest): Promise<unknown> {
 }
 
 // 엑셀 제목·단위·머리글의 기간·단위를 요구사항문과 대조 (PLAN 작업 12)
-// requirement는 실제 AI 연결(작업 8-1·9) 때 지시문에 쓴다
 export async function requestExcelLabelCheck(requirement: string, labels: ExcelLabel[]): Promise<unknown> {
-  if (getAiProvider() !== "mock") {
-    // OpenAI·KOBI용 지시문은 작업 8-1·9에서 만든다
-    throw new AiNotReadyError("excel");
-  }
+  const provider = getAiProvider();
+  if (provider === "openai") return requestOpenAiExcelLabels(requirement, labels);
+  if (provider === "kobi") throw new AiNotReadyError("excel"); // KOBI는 작업 9에서 연결
   // 예시는 같은 칸에 같은 글자가 있을 때만 돌려준다 (excel-01 전용 예시가 다른 엑셀에 붙지 않게)
   const issues = mockExcel.issues.filter((x) => labels.some((l) => l.cell === x.cell && l.text === x.whenText));
   return { issues };

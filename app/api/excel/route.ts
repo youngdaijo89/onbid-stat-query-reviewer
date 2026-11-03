@@ -1,6 +1,7 @@
 // Design Ref: §4.3 — POST /api/excel: 엑셀 제목·단위·머리글의 기간·단위를 요구사항문과 대조 (PLAN 작업 12)
 // 엑셀 파일 자체는 받지 않는다. 브라우저가 골라낸 글자 칸(셀 주소 + 종류 + 글자)만 받는다.
-import { AiNotReadyError, getAiProvider, requestExcelLabelCheck } from "@/lib/ai";
+import { getAiProvider, requestExcelLabelCheck } from "@/lib/ai";
+import { aiFailure } from "@/lib/aiErrors";
 import { validateExcelLabelInput } from "@/lib/validate";
 import { parseCellRef } from "@/lib/xlsx";
 import type { ApiError, ApiErrorCode, ExcelIssue, ExcelLabelResponse } from "@/lib/types";
@@ -29,12 +30,10 @@ export async function POST(request: Request) {
   try {
     raw = await requestExcelLabelCheck(input.value.requirement, input.value.labels);
   } catch (err) {
-    // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4)
-    if (err instanceof AiNotReadyError) {
-      return fail(503, "AI_NOT_READY", "선택한 AI 연결은 아직 준비 중이에요. 합계·소계 점검 결과는 그대로 볼 수 있어요.");
-    }
-    console.error("excel: AI 호출 실패", err instanceof Error ? err.name : "unknown");
-    return fail(502, "KOBI_ERROR", "기간·단위 대조를 하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    // 실패해도 다른 AI로 자동 전환하지 않는다 (Design Ref: §2.4). 합계·소계 점검 결과는 화면에 그대로 남는다.
+    console.error("excel: AI 호출 실패", err instanceof Error ? err.constructor.name : "unknown");
+    const f = aiFailure(err, "기간·단위 대조를");
+    return fail(f.status, f.code, f.message);
   }
 
   // AI는 보낸 셀 주소 중 하나만 쓸 수 있다 — 받지 않은 주소나 모양이 틀린 항목은 버린다 (Design Ref: §4.3)

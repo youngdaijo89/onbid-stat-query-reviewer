@@ -49,7 +49,9 @@ export type ApiErrorCode =
   | "UNSUPPORTED_MEDIA_TYPE"
   | "KOBI_ERROR"
   | "KOBI_TIMEOUT"
-  | "AI_NOT_READY";
+  | "AI_NOT_READY"
+  | "AI_CONFIG"
+  | "OFF_TASK";
 
 export interface ApiError {
   error: { code: ApiErrorCode; message: string };
