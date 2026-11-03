@@ -3,3 +3,5 @@
 .env*
 # bkit 플러그인 작업 기록 (배포에 필요 없음)
 .bkit/
+# 내부망 반입 묶음 (npm run pack:intranet 결과물, 배포에 필요 없음)
+intranet-package/
