@@ -26,8 +26,9 @@ export default function Home() {
           <p className="hero-eyebrow">QUERY REVIEWER</p>
           <h1 className="hero-title">온비드 통계 요청 쿼리 리뷰어</h1>
           <p className="hero-sub">
-            감사·자료 제출용 통계 쿼리를 어떤 방향으로 작성할지 안내하고, 결과 엑셀의 합계 오류를
-            점검해 주는 도구입니다.
+            감사·자료 제출용 통계 쿼리,
+            <br />
+            작성 전에는 방향을 잡아 주고 제출 전에는 결과 엑셀을 점검합니다.
           </p>
         </header>
 
