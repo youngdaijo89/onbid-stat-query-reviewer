@@ -4,6 +4,8 @@ import type { ExcelLabel, GuideRequest } from "@/lib/types";
 // PRD must ① 규칙 9 (초기값)
 export const MAX_REQUIREMENT_CHARS = 2000;
 export const MAX_TABLEDEF_LINES = 500;
+// 줄 수만 막으면 한 줄에 아주 긴 글을 넣어 AI로 큰 요청을 보낼 수 있어 글자 수도 막는다 (보안 점검 2026-11-03)
+export const MAX_TABLEDEF_CHARS = 50_000;
 
 // 줄 수 세기 (빈 입력은 0줄)
 export function countLines(text: string): number {
@@ -33,6 +35,9 @@ export function validateGuideInput(input: unknown): ValidationResult {
   }
   if (countLines(tableDef) > MAX_TABLEDEF_LINES) {
     return { ok: false, message: `테이블 정의서는 ${MAX_TABLEDEF_LINES}줄까지 입력할 수 있어요.` };
+  }
+  if (tableDef.length > MAX_TABLEDEF_CHARS) {
+    return { ok: false, message: `테이블 정의서는 ${MAX_TABLEDEF_CHARS.toLocaleString()}자까지 입력할 수 있어요.` };
   }
   return { ok: true, value: { requirement, tableDef } };
 }

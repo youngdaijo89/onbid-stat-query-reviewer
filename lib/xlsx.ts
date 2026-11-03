@@ -56,6 +56,31 @@ function readZipDirectory(buf: ArrayBuffer): Map<string, ZipEntry> {
   return entries;
 }
 
+// 압축을 풀면서 실제로 나온 양을 센다. 파일 머리에 적힌 크기는 꾸밀 수 있어서(압축 폭탄),
+// 그 값만 믿지 않고 MAX_PART_BYTES를 넘는 순간 멈춘다 (보안 점검 2026-11-03)
+async function inflateWithLimit(data: Uint8Array<ArrayBuffer>): Promise<ArrayBuffer> {
+  const reader = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_PART_BYTES) {
+      await reader.cancel();
+      throw new XlsxReadError("엑셀 내용이 너무 커서 점검할 수 없어요.");
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.byteLength;
+  }
+  return out.buffer;
+}
+
 async function readZipText(buf: ArrayBuffer, entries: Map<string, ZipEntry>, name: string): Promise<string | null> {
   const e = entries.get(name);
   if (!e) return null;
@@ -67,8 +92,7 @@ async function readZipText(buf: ArrayBuffer, entries: Map<string, ZipEntry>, nam
   if (e.method === 0) {
     bytes = data.slice().buffer;
   } else if (e.method === 8) {
-    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-    bytes = await new Response(stream).arrayBuffer();
+    bytes = await inflateWithLimit(data);
   } else {
     throw new XlsxReadError("지원하지 않는 엑셀 압축 방식이에요.");
   }

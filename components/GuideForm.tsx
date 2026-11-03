@@ -1,7 +1,7 @@
 "use client";
 // Design Ref: §5.3 GuideForm — 입력칸 2개, 글자·줄 수, 정의서 엑셀 불러오기, 생성 버튼 (PLAN 작업 3·4·7-1)
 import TableDefUpload from "@/components/TableDefUpload";
-import { countLines, MAX_REQUIREMENT_CHARS, MAX_TABLEDEF_LINES, validateGuideInput } from "@/lib/validate";
+import { countLines, MAX_REQUIREMENT_CHARS, MAX_TABLEDEF_CHARS, MAX_TABLEDEF_LINES, validateGuideInput } from "@/lib/validate";
 
 // 정의서 입력 형식 예시 (Design Ref: §2.2 "테이블 정의서 입력 형식")
 const TABLEDEF_PLACEHOLDER = `■ 테이블명 (설명)
@@ -29,6 +29,7 @@ export default function GuideForm({
 }: Props) {
   const reqChars = requirement.length;
   const defLines = countLines(tableDef);
+  const defChars = tableDef.length;
   const check = validateGuideInput({ requirement, tableDef });
   // 아무것도 안 쓴 처음에는 안내만 흐리게, 제한을 넘으면 빨갛게 보여준다
   const isEmpty = requirement.trim() === "" && tableDef.trim() === "";
@@ -88,9 +89,9 @@ export default function GuideForm({
             className="rounded-md border border-zinc-300 bg-white p-3 font-mono text-xs leading-5 text-black placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
           />
           <span
-            className={`self-end text-xs ${defLines > MAX_TABLEDEF_LINES ? "font-semibold text-red-600" : "text-zinc-500"}`}
+            className={`self-end text-xs ${defLines > MAX_TABLEDEF_LINES || defChars > MAX_TABLEDEF_CHARS ? "font-semibold text-red-600" : "text-zinc-500"}`}
           >
-            {defLines} / {MAX_TABLEDEF_LINES}줄
+            {defLines} / {MAX_TABLEDEF_LINES}줄 · {defChars.toLocaleString()} / {MAX_TABLEDEF_CHARS.toLocaleString()}자
           </span>
         </div>
       </div>
