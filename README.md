@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 온비드 통계 요청 쿼리 리뷰어
 
-## Getting Started
+감사·국회·유관기관 자료 제출용 **통계 쿼리(Oracle)를 어떻게 작성할지 안내**하고, 뽑은 **결과 엑셀의 합계·소계 오류를 점검**해 결재 첨부용 보고서로 출력하는 실습용 웹 앱입니다.
 
-First, run the development server:
+> ⚠ 이 앱은 **실습용**이며 모든 예시 자료는 **가상 데이터**입니다. 실제 업무 자료·실제 테이블 이름·개인정보는 입력하지 마세요.
+
+## 무엇을 하나요
+
+1. **요구사항문 + 테이블 정의서 붙여넣기** → [가이드 생성]
+2. **쿼리 작성 가이드** 확인
+   - 요구사항 요약 (3줄)
+   - 조건 분해표 (조건마다 요구사항문 원문 근거)
+   - 테이블 안내 (정의서에 없는 이름은 "확인 필요"로 표시)
+   - 주의사항 (중요도 높음·중간·낮음)
+   - 쿼리 뼈대 · 완성 쿼리 예시 (Oracle, "예시 — 실행 전 작성자 검증 필요" 표시)
+3. **결과 엑셀 점검** (.xlsx, 시트 1개)
+   - 합계·소계를 **AI가 아니라 코드로 다시 계산**해 틀린 칸을 "15행 C열 (C15)"처럼 알려 줌
+   - 표 제목·머리글의 기간·단위를 요구사항문과 대조
+   - 엑셀 파일은 **브라우저 안에서만** 읽고 서버로 보내지 않음
+4. **보고서 출력** → 인쇄 창에서 "PDF로 저장"
+
+화면의 **[예시 입력 채우기]**, **[예시 엑셀로 점검]** 버튼으로 가상 시험 자료를 바로 체험할 수 있습니다.
+
+## 지금 버전 (1차 배포)
+
+- AI 결과는 **예시 응답 모드**(`AI_PROVIDER=mock`)로 동작합니다. 실제 AI를 호출하지 않고, 미리 만든 예시 결과를 보여줍니다.
+- 실제 AI 연결(공사 KOBI API, 테스트용 OpenAI)은 다음 단계입니다. 다른 AI로 자동 전환(failover)하지 않습니다.
+- 엑셀 합계·소계 점검과 정의서 이름 대조는 **실제로 계산**합니다.
+
+## 기획·설계 문서
+
+| 문서 | 내용 |
+|---|---|
+| [PRD.md](PRD.md) | 서비스 기획서 — 문제 정의, 목표, 기능, 범위, 보안 |
+| [PLAN.md](PLAN.md) | 계획서 — 성공 기준, 작업 순서와 진행 상태 |
+| [DESIGN.md](DESIGN.md) | 설계서 — 화면 구성, 데이터 흐름, 기술 선택 |
+| [CHECK.md](CHECK.md) | 점검 기록 — 설계 비교, 성공 기준, 보안 점검 |
+| [samples/](samples/README.md) | 가상 시험 자료와 정답표 |
+
+## 기술 스택
+
+- Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4
+- 배포: Vercel
+- 새 npm 패키지 없이 브라우저 기본 기능으로 .xlsx를 읽습니다.
+
+## 내 PC에서 실행하기
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+화면에 나오는 `Local:` 주소(보통 http://localhost:3000)로 접속합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 환경변수 | 설명 |
+|---|---|
+| `AI_PROVIDER` | `mock`(기본) / `openai` / `kobi`. 값이 없거나 틀려도 `mock`으로 동작 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+비밀 값은 `.env`에만 두며 저장소에 올리지 않습니다.
