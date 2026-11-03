@@ -47,6 +47,7 @@ export interface GuideResponse {
 export type ApiErrorCode =
   | "VALIDATION_ERROR"
   | "UNSUPPORTED_MEDIA_TYPE"
+  | "CROSS_SITE"
   | "KOBI_ERROR"
   | "KOBI_TIMEOUT"
   | "AI_NOT_READY"

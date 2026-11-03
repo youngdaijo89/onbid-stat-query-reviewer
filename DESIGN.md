@@ -296,6 +296,8 @@ interface ExcelCheckResult {
 ```
 
 **오류**
+- `415` 형식이 `application/json`이 아님 (`;` 앞이 정확히 일치해야 함 — `text/plain; x=application/json` 같은 위장도 거절) → `UNSUPPORTED_MEDIA_TYPE`
+- `403` 다른 사이트에서 온 요청 (`Sec-Fetch-Site`가 `same-origin`이 아니거나 `Origin`이 이 서버 주소와 다름, 프록시 뒤면 `X-Forwarded-Host` 기준) → `CROSS_SITE` (CSRF 방어, `lib/requestGuard.ts`, 2026-11-03 보안 점검)
 - `400` 입력 누락·길이 초과 → `{ "error": { "code": "VALIDATION_ERROR", "message": "테이블 정의서를 입력해 주세요." } }`
 - `502` KOBI 응답 실패 또는 답 모양이 틀림 → `KOBI_ERROR`
 - `504` 60초 안에 답이 없음 → `KOBI_TIMEOUT`

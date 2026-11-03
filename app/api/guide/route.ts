@@ -4,6 +4,7 @@ import { isGuideResult, isSqlFix, notOracleHints, sqlProblems, unsafeSqlReason, 
 import { getAiProvider, requestGuide, requestSqlFix } from "@/lib/ai";
 import { aiErrorLabel, aiFailure } from "@/lib/aiErrors";
 import { validateGuideInput } from "@/lib/validate";
+import { rejectUnsafeRequest } from "@/lib/requestGuard";
 import type { ApiError, ApiErrorCode, GuideResponse } from "@/lib/types";
 
 // 사용자에게는 정해진 문장만 보여준다 (내부 오류 내용은 내보내지 않음)
@@ -12,10 +13,9 @@ function fail(status: number, code: ApiErrorCode, message: string) {
 }
 
 export async function POST(request: Request) {
-  // JSON 요청만 받는다 (다른 사이트가 폼으로 보내는 요청 차단)
-  if (!request.headers.get("content-type")?.includes("application/json")) {
-    return fail(415, "UNSUPPORTED_MEDIA_TYPE", "요청 형식이 올바르지 않아요.");
-  }
+  // JSON 형식이고 같은 사이트 화면에서 온 요청만 받는다 (CSRF 방어 — lib/requestGuard.ts)
+  const blocked = rejectUnsafeRequest(request);
+  if (blocked) return fail(blocked.status, blocked.code, blocked.message);
 
   let body: unknown;
   try {

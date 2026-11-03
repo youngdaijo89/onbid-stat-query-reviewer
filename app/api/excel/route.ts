@@ -3,6 +3,7 @@
 import { getAiProvider, requestExcelLabelCheck } from "@/lib/ai";
 import { aiErrorLabel, aiFailure } from "@/lib/aiErrors";
 import { validateExcelLabelInput } from "@/lib/validate";
+import { rejectUnsafeRequest } from "@/lib/requestGuard";
 import { parseCellRef } from "@/lib/xlsx";
 import type { ApiError, ApiErrorCode, ExcelIssue, ExcelLabelResponse } from "@/lib/types";
 
@@ -13,9 +14,9 @@ function fail(status: number, code: ApiErrorCode, message: string) {
 const LABEL_ISSUE_TYPES: ExcelIssue["type"][] = ["기간 불일치", "단위 불일치"];
 
 export async function POST(request: Request) {
-  if (!request.headers.get("content-type")?.includes("application/json")) {
-    return fail(415, "UNSUPPORTED_MEDIA_TYPE", "요청 형식이 올바르지 않아요.");
-  }
+  // JSON 형식이고 같은 사이트 화면에서 온 요청만 받는다 (CSRF 방어 — lib/requestGuard.ts)
+  const blocked = rejectUnsafeRequest(request);
+  if (blocked) return fail(blocked.status, blocked.code, blocked.message);
   let body: unknown;
   try {
     body = await request.json();
