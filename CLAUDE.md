@@ -1,4 +1,4 @@
-# CLAUDE.md — 온비드 쿼리 리뷰어
+# CLAUDE.md — 온비드 통계 요청 쿼리 리뷰어
 
 @AGENTS.md
 

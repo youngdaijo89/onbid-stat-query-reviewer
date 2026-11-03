@@ -24,7 +24,7 @@ export default function ReportView({ result, mode, excel }: Props) {
     <article className="hidden bg-white text-[11pt] leading-relaxed text-black print:block">
       <h1 className="text-2xl font-bold">쿼리 작성 가이드 보고서</h1>
       <p className="mt-1 text-sm">
-        작성일 {today} · 온비드 쿼리 리뷰어 · {MODE_NOTE[mode]}
+        작성일 {today} · 온비드 통계 요청 쿼리 리뷰어 · {MODE_NOTE[mode]}
       </p>
       {/* 경고 문구는 AI 답이 아니라 코드에 고정 */}
       <p className="mt-2 border border-black px-3 py-2 text-sm font-semibold">

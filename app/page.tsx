@@ -24,7 +24,7 @@ export default function Home() {
         {/* 앱 이름과 한 줄 설명 */}
         <header className="flex flex-col gap-3 print:hidden">
           <h1 className="text-4xl font-bold tracking-tight text-black sm:text-5xl dark:text-zinc-50">
-            온비드 쿼리 리뷰어
+            온비드 통계 요청 쿼리 리뷰어
           </h1>
           <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
             감사·자료 제출용 통계 쿼리를 어떤 방향으로 작성할지 안내하고, 결과 엑셀의 합계 오류를

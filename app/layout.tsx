@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "온비드 쿼리 리뷰어",
+  title: "온비드 통계 요청 쿼리 리뷰어",
   description: "감사·자료 제출용 통계 쿼리 작성 가이드와 결과 엑셀 점검 도구",
 };
 
